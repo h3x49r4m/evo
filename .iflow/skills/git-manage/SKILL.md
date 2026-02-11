@@ -100,10 +100,9 @@ Before any commit, the skill runs:
 ```
 <type>[<scope>]: <description>
 
-Branch: <branch_name>
+[optional body]
 
-Changes:
-- List of affected files
+Files changed (branch: <branch name>): <files>
 
 Verification:
 - Tests: <count> passed
