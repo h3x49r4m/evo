@@ -61,7 +61,27 @@ Then edit `.env/llm_providers.json` with your LLM configuration:
 }
 ```
 
-See `.env/llm_providers.json.sample` for the full template and available options.
+Template
+
+```
+{
+    "default_provider": "iflow",
+    "providers": {
+        "iflow": {
+            "api_key": "YOUR_IFLOW_API_KEY_HERE",
+            "base_url": "https://apis.iflow.cn/v1",
+            "model": "deepseek-v3",
+            "description": "iFlow API provider"
+        },
+        "openrouter": {
+            "api_key": "YOUR_OPENROUTER_API_KEY_HERE",
+            "base_url": "https://openrouter.ai/api/v1",
+            "model": "deepseek/deepseek-r1-0528:free",
+            "description": "OpenRouter API provider"
+        }
+    }
+}
+```
 
 ## Running
 
