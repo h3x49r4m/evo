@@ -1,13 +1,8 @@
 """Integration tests for Autonomous Mode Flow."""
 
 import pytest
-import sys
-from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-from main import EvoSystem, create_evo_system
+from evo.main import EvoSystem, create_evo_system
 
 
 class TestAutonomousModeFlow:

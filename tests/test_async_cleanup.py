@@ -93,7 +93,7 @@ async def test_cleanup_with_shared_memory_injection():
     """Test that cleanup works correctly with dependency injection."""
     from evo.action import ActionLayer
     from evo.feedback import FeedbackLoop
-    from main import EvoSystem
+    from evo.main import EvoSystem
     
     # Create shared memory (use_chromadb=False to avoid NotFoundError on multiple cleanup)
     shared_memory = MemorySystem(use_chromadb=False)
