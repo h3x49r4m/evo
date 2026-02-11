@@ -87,7 +87,16 @@ class Config:
     MEMORY_USE_CHROMADB: bool = os.getenv("MEMORY_USE_CHROMADB", "true").lower() == "true"
     MEMORY_COLLECTION_NAME: str = os.getenv("MEMORY_COLLECTION_NAME", "episodes")
     
-    # OpenAI API
+    # LLM Provider Configuration
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "iflow")  # Options: iflow, openrouter, openai
+    LLM_API_KEY: Optional[str] = os.getenv("LLM_API_KEY")
+    LLM_BASE_URL: Optional[str] = os.getenv("LLM_BASE_URL")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "deepseek-v3")
+    LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
+    LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "3"))
+    LLM_RETRY_DELAY: float = float(os.getenv("LLM_RETRY_DELAY", "1.0"))
+    
+    # Legacy OpenAI API (deprecated, use LLM_* instead)
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
     OPENAI_TEMPERATURE: float = float(os.getenv("OPENAI_TEMPERATURE", "0.7"))

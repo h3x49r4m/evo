@@ -6,10 +6,10 @@ from typing import Any, Callable, Dict, List, Optional
 from evo.config import Config
 
 try:
-    import openai
-    OPENAI_AVAILABLE = True
+    from evo.llm import LLMClientIFlow, LLMClientOpenRouter, ModelsIFlow, ModelsOpenRouter
+    LLM_CLIENTS_AVAILABLE = True
 except ImportError:
-    OPENAI_AVAILABLE = False
+    LLM_CLIENTS_AVAILABLE = False
 
 
 class ActionLayer:
@@ -19,22 +19,35 @@ class ActionLayer:
         self,
         api_key: Optional[str] = None,
         memory: Optional[Any] = None,
-        capability_registry: Optional[Any] = None
+        capability_registry: Optional[Any] = None,
+        llm_provider: Optional[str] = None,
+        llm_base_url: Optional[str] = None
     ) -> None:
         """Initialize the action layer.
         
         Args:
-            api_key: Optional OpenAI API key for LLM-based planning.
+            api_key: Optional API key for LLM-based planning.
             memory: Optional shared MemorySystem instance for dependency injection.
             capability_registry: Optional CapabilityRegistry for tool registration.
                                  If not provided, creates a new instance.
+            llm_provider: Optional LLM provider (iflow, openrouter, openai).
+            llm_base_url: Optional custom base URL for LLM API.
         """
-        self.api_key = api_key or Config.OPENAI_API_KEY
+        self.api_key = api_key or Config.LLM_API_KEY
         self.memory = memory
         self.capability_registry = capability_registry
+        self.llm_provider = llm_provider or Config.LLM_PROVIDER
+        self.llm_base_url = llm_base_url or Config.LLM_BASE_URL
         
-        if self.api_key and OPENAI_AVAILABLE:
-            openai.api_key = self.api_key
+        # Initialize LLM client based on provider
+        self.llm_client = None
+        if self.api_key and LLM_CLIENTS_AVAILABLE:
+            if self.llm_provider == "iflow":
+                base_url = self.llm_base_url or "https://apis.iflow.cn/v1"
+                self.llm_client = LLMClientIFlow(api_key=self.api_key, base_url=base_url)
+            elif self.llm_provider == "openrouter":
+                base_url = self.llm_base_url or "https://openrouter.ai/api/v1"
+                self.llm_client = LLMClientOpenRouter(api_key=self.api_key, base_url=base_url)
     
     # Tool registration (delegates to capability_registry if available)
     def register_tool(self, name: str, callable_func: Callable, description: str = "") -> None:
@@ -69,8 +82,8 @@ class ActionLayer:
         Returns:
             Dictionary with execution steps and goal.
         """
-        # Try LLM-based planning if API key available
-        if self.api_key and OPENAI_AVAILABLE:
+        # Try LLM-based planning if LLM client is available
+        if self.llm_client:
             try:
                 llm_plan = self._llm_plan_action(goal, stream=stream)
                 if llm_plan and "steps" in llm_plan:
@@ -117,41 +130,32 @@ Create a JSON response with this format:
 
 Only use tools from the available list. Be specific and concise."""
 
-        # Call OpenAI API with retry and exponential backoff
-        max_retries = Config.OPENAI_MAX_RETRIES
-        base_delay = Config.OPENAI_RETRY_DELAY
+        # Call LLM API with retry and exponential backoff
+        max_retries = Config.LLM_MAX_RETRIES
+        base_delay = Config.LLM_RETRY_DELAY
         
         for attempt in range(max_retries):
             try:
-                if stream:
+                # Get model based on provider
+                model = Config.LLM_MODEL
+                if self.llm_provider == "iflow":
+                    model = model or "deepseek-v3"
+                elif self.llm_provider == "openrouter":
+                    model = model or "deepseek/deepseek-r1-0528:free"
+                
+                messages = [
+                    {"role": "system", "content": "You are an action planning assistant."},
+                    {"role": "user", "content": prompt}
+                ]
+                
+                if stream and self.llm_client:
                     # Streaming response
-                    response = openai.ChatCompletion.create(
-                        model=Config.OPENAI_MODEL,
-                        messages=[
-                            {"role": "system", "content": "You are an action planning assistant."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=Config.OPENAI_TEMPERATURE,
-                        stream=True
-                    )
-                    # Collect streaming chunks
-                    content = ""
-                    for chunk in response:
-                        if hasattr(chunk, 'choices') and chunk.choices:
-                            delta = chunk.choices[0].delta
-                            if hasattr(delta, 'content') and delta.content:
-                                content += delta.content
-                else:
+                    content = self.llm_client.respond_streaming(model, messages, debug=False)
+                elif self.llm_client:
                     # Non-streaming response
-                    response = openai.ChatCompletion.create(
-                        model=Config.OPENAI_MODEL,
-                        messages=[
-                            {"role": "system", "content": "You are an action planning assistant."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=Config.OPENAI_TEMPERATURE
-                    )
-                    content = response.choices[0].message.content
+                    content = self.llm_client.respond(model, messages)
+                else:
+                    raise RuntimeError("LLM client not available")
                 
                 # Parse response
                 return json.loads(content)
