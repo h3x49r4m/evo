@@ -24,23 +24,8 @@ class SciFiStoryWriter:
         self.system = create_evo_system()
         self.memory = self.system.memory
         self.safety = self.system.safety
+        self.llm_client = self.system.action.llm_client if hasattr(self.system.action, 'llm_client') else None
         self.model = Config.LLM_MODEL
-        
-        # Initialize LLM client
-        try:
-            from evo.llm.llm_client_iflow import IFlowClient
-            from evo.llm.llm_client_openrouter import OpenRouterClient
-            
-            # Try iFlow client first, then OpenRouter
-            provider = Config.LLM_PROVIDER.upper()
-            if provider == 'IFLOW':
-                self.llm_client = IFlowClient()
-            elif provider == 'OPENROUTER':
-                self.llm_client = OpenRouterClient()
-            else:
-                self.llm_client = None
-        except Exception:
-            self.llm_client = None
         
         # Configure story modes
         self.modes = self._configure_modes()
