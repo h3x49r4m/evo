@@ -179,23 +179,23 @@ Continuous Loops
 Feedback Loop
 -------------
 
-```
-Action → Observation → Memory → Updated Context
-```
+.. code-block:: text
+
+    Action → Observation → Memory → Updated Context
 
 Metacognition Loop
 ------------------
 
-```
-Periodic/Event Trigger → Reflection → Self-Model Update → Improved Decisions
-```
+.. code-block:: text
+
+    Periodic/Event Trigger → Reflection → Self-Model Update → Improved Decisions
 
 Exploration Loop
 ----------------
 
-```
-Novelty Detection → New Goals → New Capabilities → Expanded Autonomy
-```
+.. code-block:: text
+
+    Novelty Detection → New Goals → New Capabilities → Expanded Autonomy
 
 Core Components
 ===============
@@ -223,23 +223,29 @@ Capability Registry
 -------------------
 
 Dynamic tracking of:
+
 - **Tools**: Available actions
 - **Skills**: Learned abilities
 - **Knowledge**: Facts, patterns, heuristics
+
+Capabilities can be added/removed dynamically, creating a positive feedback loop for self-improvement.
 
 Metacognition Layer
 -------------------
 
 Periodic reflection system asking:
+
 - "What am I doing?"
 - "Is it working?"
 - "What did I learn?"
 - "What should I do differently?"
 
+Updates self-model and improves future decision-making.
+
 Exploration Budget
 ------------------
 
-Allocates a percentage of actions to random exploration to prevent local optima.
+Allocates a percentage of actions to random exploration to prevent local optima and discover new capabilities.
 
 Safety Mechanisms
 =================
@@ -248,6 +254,7 @@ Hard Constraints
 ----------------
 
 Immutable boundaries overriding all other processes:
+
 - No self-destruction or capability removal
 - No infinite loops (automatic termination)
 - No harmful actions to environment or users
@@ -263,9 +270,9 @@ Design Philosophy
 
 The system is always "alive" — responsive to users when present, autonomous when alone, continuously learning and evolving through:
 
-1. **External grounding**: Real-world interactions provide feedback
+1. **External grounding**: Real-world interactions provide feedback and learning signals
 2. **Internal drives**: Motivation functions guide autonomous exploration
-3. **Self-reflection**: Continuous metacognition improves the system
+3. **Self-reflection**: Continuous metacognition improves the system itself
 4. **Bounded autonomy**: Safety constraints ensure responsible behavior
 
 This architecture transforms a language model from a passive responder into an active, self-directed agent capable of meaning-making and continuous self-improvement.
