@@ -52,7 +52,7 @@ jobs:
       - name: Generate site
         run: |
           cd docs/peta-rust
-          ./target/release/peta build --base-url "/evo" --content-dir ../_content
+          ./_out/target/release/peta build --base-url "/evo" --content-dir ../_content
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
