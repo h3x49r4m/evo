@@ -16,6 +16,8 @@ class FeedbackLoop:
         """
         self._memory = memory or MemorySystem(collection_name="feedback")
         self._observations: List[Dict[str, Any]] = []
+        # Action frequency index for O(1) pattern detection
+        self._action_frequency: Dict[str, int] = {}
     
     # Observation processor
     def process_observation(self, observation: Dict[str, Any]) -> Dict[str, Any]:
@@ -27,18 +29,23 @@ class FeedbackLoop:
             "timestamp": observation.get("timestamp")
         }
         self._observations.append(processed)
+        
+        # Update action frequency index
+        action = processed.get("action")
+        if action:
+            self._action_frequency[action] = self._action_frequency.get(action, 0) + 1
+        
         return processed
     
     def detect_patterns(self) -> List[Dict[str, Any]]:
-        """Detect patterns from accumulated observations."""
-        patterns = []
-        action_counts = {}
-        for obs in self._observations:
-            action = obs.get("action")
-            if action:
-                action_counts[action] = action_counts.get(action, 0) + 1
+        """Detect patterns from accumulated observations.
         
-        for action, count in action_counts.items():
+        Optimized to use pre-built action frequency index instead of
+        iterating through all observations (O(1) vs O(n)).
+        """
+        patterns = []
+        # Use pre-built frequency index - O(n) where n is unique actions, not total observations
+        for action, count in self._action_frequency.items():
             if count >= 2:
                 patterns.append({"action": action, "frequency": count})
         

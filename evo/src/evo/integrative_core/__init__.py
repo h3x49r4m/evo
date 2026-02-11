@@ -1,6 +1,7 @@
 """Integrative Core - Combines user input and self state for unified processing."""
 
 from typing import Any, Dict, Optional
+from evo.types import ContextData
 
 
 class IntegrativeCore:
@@ -40,11 +41,11 @@ class IntegrativeCore:
             "data": {}
         }
 
-    def update_user_context(self, key: str, value: Any) -> None:
+    def update_user_context(self, key: str, value: str) -> None:
         """Update user context with key-value pair."""
         self.user_context[key] = value
 
-    def update_self_context(self, key: str, value: Any) -> None:
+    def update_self_context(self, key: str, value: ContextData) -> None:
         """Update self context with key-value pair."""
         self.self_context[key] = value
 

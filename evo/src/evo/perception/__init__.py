@@ -1,18 +1,27 @@
 """Perception Gateway - Filters, prioritizes, and routes inputs."""
 
 from typing import Any, Dict, List, Optional
+from evo.config import Config
 
 
 class PerceptionGateway:
-    """Filters, prioritizes, and routes inputs to appropriate contexts."""
+    """Filters, prioritizes, and routes inputs to appropriate contexts.
     
-    # Priority levels for different sources
+    Priority levels are configurable via environment variables:
+    - PERCEPTION_PRIORITY_SAFETY: Default 0 (highest priority)
+    - PERCEPTION_PRIORITY_USER: Default 1
+    - PERCEPTION_PRIORITY_INTERNET: Default 2
+    - PERCEPTION_PRIORITY_ENVIRONMENT: Default 3
+    - PERCEPTION_PRIORITY_SYSTEM: Default 4 (lowest priority)
+    """
+    
+    # Priority levels for different sources (configurable)
     PRIORITY_MAP = {
-        "safety": 0,
-        "user": 1,
-        "internet": 2,
-        "environment": 3,
-        "system": 4,
+        "safety": Config.PERCEPTION_PRIORITY_SAFETY,
+        "user": Config.PERCEPTION_PRIORITY_USER,
+        "internet": Config.PERCEPTION_PRIORITY_INTERNET,
+        "environment": Config.PERCEPTION_PRIORITY_ENVIRONMENT,
+        "system": Config.PERCEPTION_PRIORITY_SYSTEM,
     }
     
     def __init__(self) -> None:

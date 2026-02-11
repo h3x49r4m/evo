@@ -1,4 +1,55 @@
-"""Configuration module for the evo system."""
+"""Configuration management for the evo autonomous agent system.
+
+This module provides centralized configuration management with support for
+environment variables. All magic numbers and configuration values are
+consolidated here to enable easy customization across different deployment
+environments.
+
+Configuration Categories:
+    - Action Layer: Retry delays, max retries, LLM settings
+    - Capability Registry: Default skill levels, validation bounds
+    - Safety Layer: Time, storage, and iteration limits
+    - Perception Gateway: Priority levels for different input sources
+
+Environment Variables:
+    Set environment variables to override default configuration values:
+    
+    Action Configuration:
+        - ACTION_RETRY_DELAY: Delay between retry attempts (default: 0.1)
+        - ACTION_MAX_RETRIES: Maximum retry attempts (default: 3)
+    
+    Capability Configuration:
+        - CAPABILITY_DEFAULT_LEVEL: Default skill level (default: 0.5)
+    
+    Safety Configuration:
+        - SAFETY_TIME_LIMIT: Maximum execution time in seconds (default: 3600)
+        - SAFETY_STORAGE_LIMIT: Maximum storage in bytes (default: 107374182400)
+        - SAFETY_ITERATION_LIMIT: Maximum iterations (default: 1000)
+    
+    LLM Configuration:
+        - OPENAI_API_KEY: OpenAI API key (default: None)
+        - OPENAI_MODEL: Model name (default: gpt-3.5-turbo)
+        - OPENAI_TEMPERATURE: Sampling temperature (default: 0.7)
+    
+    Perception Configuration:
+        - PERCEPTION_PRIORITY_SAFETY: Safety input priority (default: 0)
+        - PERCEPTION_PRIORITY_USER: User input priority (default: 1)
+        - PERCEPTION_PRIORITY_INTERNET: Internet input priority (default: 2)
+        - PERCEPTION_PRIORITY_ENVIRONMENT: Environment input priority (default: 3)
+        - PERCEPTION_PRIORITY_SYSTEM: System input priority (default: 4)
+
+Example:
+    >>> from evo.config import Config
+    >>>
+    >>> # Access configuration values
+    >>> print(f"Max retries: {Config.ACTION_MAX_RETRIES}")
+    >>> print(f"Default skill level: {Config.CAPABILITY_DEFAULT_LEVEL}")
+    >>>
+    >>> # Set environment variable before import to override
+    >>> import os
+    >>> os.environ["ACTION_MAX_RETRIES"] = "5"
+    >>> # Note: Must be set before the module is imported
+"""
 
 from typing import Optional
 import os
@@ -26,11 +77,11 @@ class Config:
     SAFETY_ITERATION_LIMIT: int = int(os.getenv("SAFETY_ITERATION_LIMIT", "1000"))
     
     # Perception Gateway
-    PERCEPTION_PRIORITY_SAFETY: int = 0
-    PERCEPTION_PRIORITY_USER: int = 1
-    PERCEPTION_PRIORITY_INTERNET: int = 2
-    PERCEPTION_PRIORITY_ENVIRONMENT: int = 3
-    PERCEPTION_PRIORITY_SYSTEM: int = 4
+    PERCEPTION_PRIORITY_SAFETY: int = int(os.getenv("PERCEPTION_PRIORITY_SAFETY", "0"))
+    PERCEPTION_PRIORITY_USER: int = int(os.getenv("PERCEPTION_PRIORITY_USER", "1"))
+    PERCEPTION_PRIORITY_INTERNET: int = int(os.getenv("PERCEPTION_PRIORITY_INTERNET", "2"))
+    PERCEPTION_PRIORITY_ENVIRONMENT: int = int(os.getenv("PERCEPTION_PRIORITY_ENVIRONMENT", "3"))
+    PERCEPTION_PRIORITY_SYSTEM: int = int(os.getenv("PERCEPTION_PRIORITY_SYSTEM", "4"))
     
     # Memory System
     MEMORY_USE_CHROMADB: bool = os.getenv("MEMORY_USE_CHROMADB", "true").lower() == "true"

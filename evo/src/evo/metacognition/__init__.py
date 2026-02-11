@@ -1,6 +1,7 @@
 """Metacognition Layer - Reflection and self-model update."""
 
 from typing import Any, Dict, List
+from evo.types import BeliefValue
 
 
 class MetacognitionLayer:
@@ -28,7 +29,7 @@ class MetacognitionLayer:
         """Update a capability in the self-model."""
         self._self_model["capabilities"][capability] = level
     
-    def update_beliefs(self, belief: str, value: Any) -> None:
+    def update_beliefs(self, belief: str, value: BeliefValue) -> None:
         """Update a belief in the self-model."""
         self._self_model["beliefs"][belief] = value
     

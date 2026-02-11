@@ -2,6 +2,7 @@
 
 import json
 from typing import Any, Dict, List, Optional
+from evo.types import WorkingMemoryValue, SemanticMemoryValue
 
 try:
     import chromadb
@@ -38,7 +39,7 @@ class MemorySystem:
         def __init__(self) -> None:
             self.context: Dict[str, Any] = {}
         
-        def store(self, key: str, value: Any) -> None:
+        def store(self, key: str, value: WorkingMemoryValue) -> None:
             """Store a key-value pair in working memory."""
             self.context[key] = value
         
@@ -167,7 +168,7 @@ class MemorySystem:
         def __init__(self) -> None:
             self.knowledge: Dict[str, Any] = {}
         
-        def add_fact(self, key: str, value: Any) -> None:
+        def add_fact(self, key: str, value: SemanticMemoryValue) -> None:
             """Add or overwrite a fact in semantic memory."""
             self.knowledge[key] = value
         

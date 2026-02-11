@@ -3,6 +3,7 @@
 from typing import Any, Callable, Dict, List, Optional
 from evo.config import Config
 from evo.validation import validate_tool_name, validate_skill_level, validate_name, get_logger
+from evo.types import KnowledgeValue
 
 logger = get_logger("evo.capability")
 
@@ -14,8 +15,28 @@ class CapabilityRegistry:
         self._tools: Dict[str, Dict[str, Any]] = {}
         self._skills: Dict[str, Dict[str, Any]] = {}
         self._knowledge: Dict[str, Any] = {}
+        # Search index: maps lowercase tokens to tool names for fast lookup
+        self._tool_search_index: Dict[str, List[str]] = {}
     
     # Tool methods
+    def _build_tool_search_index(self, name: str, description: str) -> None:
+        """Build search index for a tool from its name and description."""
+        # Remove tool from existing index entries
+        for token_list in self._tool_search_index.values():
+            if name in token_list:
+                token_list.remove(name)
+        
+        # Tokenize name and description
+        text = f"{name} {description}".lower()
+        tokens = text.split()
+        
+        # Index each token
+        for token in tokens:
+            if token not in self._tool_search_index:
+                self._tool_search_index[token] = []
+            if name not in self._tool_search_index[token]:
+                self._tool_search_index[token].append(name)
+    
     def register_tool(
         self,
         name: str,
@@ -29,6 +50,8 @@ class CapabilityRegistry:
             "description": description,
             "callable": callable_func
         }
+        # Build search index from name and description
+        self._build_tool_search_index(name, description)
         logger.debug(f"Registered tool: {name}")
     
     def get_tool(self, name: str) -> Optional[Dict[str, Any]]:
@@ -42,11 +65,34 @@ class CapabilityRegistry:
     def unregister_tool(self, name: str) -> None:
         """Remove a tool from the registry."""
         self._tools.pop(name, None)
+        # Remove from search index
+        for token_list in self._tool_search_index.values():
+            if name in token_list:
+                token_list.remove(name)
         logger.debug(f"Unregistered tool: {name}")
     
     def search_tools(self, query: str) -> List[str]:
-        """Search for tools by name containing the query string."""
-        return [name for name in self.list_tools() if query.lower() in name.lower()]
+        """Search for tools by name containing the query string.
+        
+        Uses a search index for faster lookups when multiple tools exist.
+        Falls back to linear search for partial matches if index doesn't help.
+        """
+        if not query:
+            return []
+        
+        query_lower = query.lower()
+        results: set[str] = set()
+        
+        # Check search index for exact token matches
+        for token, tool_names in self._tool_search_index.items():
+            if query_lower in token:
+                results.update(tool_names)
+        
+        # If index didn't find matches, do fallback linear search
+        if not results:
+            results = {name for name in self.list_tools() if query_lower in name.lower()}
+        
+        return sorted(results)
     
     # Skill methods
     def register_skill(self, name: str, description: str, level: Optional[float] = None) -> None:
@@ -87,7 +133,7 @@ class CapabilityRegistry:
             logger.debug(f"Updated skill level: {name} -> {level}")
     
     # Knowledge methods
-    def register_knowledge(self, key: str, value: Any) -> None:
+    def register_knowledge(self, key: str, value: KnowledgeValue) -> None:
         """Register a knowledge fact in the capability registry."""
         self._knowledge[key] = value
         logger.debug(f"Registered knowledge: {key}")

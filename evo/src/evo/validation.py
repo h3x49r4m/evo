@@ -1,4 +1,41 @@
-"""Input validation utilities for the evo system."""
+"""Input validation utilities for the evo autonomous agent system.
+
+This module provides validation functions for common input types throughout
+the system. These functions help ensure data integrity and catch invalid
+inputs early in the processing pipeline.
+
+Validation Categories:
+    - Skill/Capability Levels: Validates that skill levels are within valid bounds (0.0-1.0)
+    - Names: Validates that entity names are non-empty and valid identifiers
+    - Tool Names: Validates that tool names follow Python identifier rules
+
+Usage Pattern:
+    Import validation functions and use them before accepting user input
+    or storing data. Raise ValueError with descriptive messages for invalid inputs.
+
+Example:
+    >>> from evo.validation import validate_skill_level, validate_name
+    >>>
+    >>> # Validate a skill level
+    >>> level = 0.75
+    >>> if not validate_skill_level(level):
+    ...     raise ValueError(f"Invalid skill level: {level}")
+    >>>
+    >>> # Validate a name
+    >>> name = "search_web"
+    >>> if not validate_name(name, "Skill"):
+    ...     raise ValueError(f"Invalid skill name: {name}")
+
+Common Patterns:
+    1. Validate during registration (e.g., register_tool, register_skill)
+    2. Validate before storing in memory
+    3. Validate after parsing user input
+    4. Validate configuration values
+
+Error Handling:
+    All validation functions return boolean values. It's up to the caller
+    to raise appropriate exceptions with meaningful error messages.
+"""
 
 from evo.config import Config
 from evo.logging import get_logger
