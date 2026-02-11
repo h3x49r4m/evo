@@ -112,7 +112,7 @@ class IntelligentResearchAgent:
         return result
 
     def _execute_research_phase(self, topic: str, phase: int) -> Dict[str, Any]:
-        """Execute a single research phase.
+        """Execute a single research phase using LLM.
         
         Args:
             topic: The research topic.
@@ -121,26 +121,47 @@ class IntelligentResearchAgent:
         Returns:
             Dictionary with phase results.
         """
-        # Use LLM for intelligent planning if available
+        phase_descriptions = {
+            1: "analyzing the topic and generating research questions",
+            2: "searching for relevant information and sources",
+            3: "collecting and analyzing data from sources",
+            4: "synthesizing findings and drawing conclusions"
+        }
+        
+        # Use LLM for detailed research content
         if self.llm_client:
             try:
-                prompt = f"Generate research plan for phase {phase} on topic: {topic}"
+                prompt = f"""You are a research assistant conducting research on: {topic}
+
+Phase {phase}: {phase_descriptions[phase]}
+
+Provide detailed research findings for this phase. Include:
+- Key insights and discoveries
+- Specific data points or evidence
+- Relevant examples or case studies
+- Citations or references (if applicable)
+
+Be thorough and specific. Provide at least 3-4 substantial paragraphs."""
+                
                 llm_response = self.llm_client.respond(
                     model=self.system.action.model,
                     messages=[{"role": "user", "content": prompt}]
                 )
+                
                 return {
                     'phase': phase,
-                    'plan': llm_response,
-                    'data': f"Research data for phase {phase}"
+                    'description': phase_descriptions[phase],
+                    'content': llm_response,
+                    'data': f"Detailed research data for phase {phase}"
                 }
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"  LLM error: {e}")
         
         # Fallback to simple planning
         return {
             'phase': phase,
-            'plan': f"Standard research plan for phase {phase}",
+            'description': phase_descriptions[phase],
+            'content': f"Standard research content for phase {phase}: {phase_descriptions[phase]}",
             'data': f"Research data for phase {phase}"
         }
 
@@ -179,7 +200,7 @@ class IntelligentResearchAgent:
         return paper
 
     def _generate_abstract(self, research_result: Dict[str, Any]) -> str:
-        """Generate paper abstract.
+        """Generate paper abstract using LLM.
         
         Args:
             research_result: The research results.
@@ -190,6 +211,33 @@ class IntelligentResearchAgent:
         findings = research_result.get('findings', [])
         topic = research_result.get('topic', 'Unknown')
         
+        # Use LLM to generate detailed abstract
+        if self.llm_client:
+            try:
+                findings_summary = "\n".join([f.get('content', '') for f in findings])
+                prompt = f"""Write a comprehensive abstract for a research paper on: {topic}
+
+Research findings summary:
+{findings_summary}
+
+The abstract should:
+- Be 200-300 words
+- State the research problem
+- Summarize methodology
+- Highlight key findings
+- Mention implications
+
+Write in academic style."""
+                
+                abstract = self.llm_client.respond(
+                    model=self.system.action.model,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                return abstract
+            except Exception:
+                pass
+        
+        # Fallback to simple abstract
         abstract = f"This paper presents research findings on {topic}. "
         abstract += f"The study explores {len(findings)} key aspects of the topic. "
         abstract += "The methodology combines automated information gathering "
@@ -198,7 +246,7 @@ class IntelligentResearchAgent:
         return abstract
 
     def _generate_sections(self, research_result: Dict[str, Any]) -> List[Dict[str, str]]:
-        """Generate paper sections.
+        """Generate detailed paper sections using LLM.
         
         Args:
             research_result: The research results.
@@ -206,6 +254,90 @@ class IntelligentResearchAgent:
         Returns:
             List of section dictionaries.
         """
+        findings = research_result.get('findings', [])
+        topic = research_result.get('topic', 'Unknown')
+        
+        # Use LLM to generate detailed sections
+        if self.llm_client:
+            try:
+                sections = []
+                
+                # Introduction
+                intro_prompt = f"""Write an introduction section for a research paper on: {topic}
+
+The introduction should:
+- Provide background and context
+- State the research problem
+- Outline the paper structure
+- Be 500-600 words"""
+                
+                intro = self.llm_client.respond(
+                    model=self.system.action.model,
+                    messages=[{"role": "user", "content": intro_prompt}]
+                )
+                sections.append({'title': 'Introduction', 'content': intro})
+                
+                # Methodology
+                method_prompt = f"""Write a methodology section for research on: {topic}
+
+The methodology should describe:
+- Research approach and design
+- Data collection methods
+- Analysis techniques
+- Tools and resources used
+- Be 400-500 words"""
+                
+                method = self.llm_client.respond(
+                    model=self.system.action.model,
+                    messages=[{"role": "user", "content": method_prompt}]
+                )
+                sections.append({'title': 'Methodology', 'content': method})
+                
+                # Findings
+                findings_content = "\n\n".join([f"Phase {f['phase']}: {f['content']}" for f in findings])
+                sections.append({'title': 'Findings', 'content': findings_content})
+                
+                # Discussion
+                discussion_prompt = f"""Write a discussion section based on these research findings on: {topic}
+
+Findings:
+{findings_content[:1000]}...
+
+The discussion should:
+- Interpret the findings
+- Compare with existing literature
+- Discuss limitations
+- Suggest implications
+- Be 500-600 words"""
+                
+                discussion = self.llm_client.respond(
+                    model=self.system.action.model,
+                    messages=[{"role": "user", "content": discussion_prompt}]
+                )
+                sections.append({'title': 'Discussion', 'content': discussion})
+                
+                # Conclusion
+                conclusion_prompt = f"""Write a conclusion section for research on: {topic}
+
+The conclusion should:
+- Summarize main findings
+- Answer research questions
+- Discuss contributions
+- Suggest future research directions
+- Be 300-400 words"""
+                
+                conclusion = self.llm_client.respond(
+                    model=self.system.action.model,
+                    messages=[{"role": "user", "content": conclusion_prompt}]
+                )
+                sections.append({'title': 'Conclusion', 'content': conclusion})
+                
+                return sections
+                
+            except Exception as e:
+                print(f"  LLM error generating sections: {e}")
+        
+        # Fallback to simple sections
         sections = [
             {
                 'title': 'Introduction',
