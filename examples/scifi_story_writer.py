@@ -160,6 +160,7 @@ For each act, provide:
 - 3-4 key scenes with brief descriptions
 - Emotional arc for the protagonist
 
+First, provide a compelling story title, then the outline.
 Format as structured text."""
                 
                 outline_text = self.llm_client.respond(
@@ -167,8 +168,11 @@ Format as structured text."""
                     messages=[{"role": "user", "content": prompt}]
                 )
                 
+                # Extract title from LLM response
+                title = self._extract_title(outline_text, topic)
+                
                 return {
-                    'title': f"The {topic} Chronicles",
+                    'title': title,
                     'topic': topic,
                     'acts': self._parse_outline(outline_text),
                     'safe': True
@@ -178,7 +182,7 @@ Format as structured text."""
         
         # Fallback outline
         return {
-            'title': f"The {topic} Chronicles",
+            'title': f"The Awakening of {topic.title()}",
             'topic': topic,
             'acts': [
                 {
@@ -239,6 +243,32 @@ Format as structured text."""
                 'scenes': outline_text.split('\n')[6:9]
             }
         ]
+
+    def _extract_title(self, text: str, topic: str) -> str:
+        """Extract or generate a title from text.
+        
+        Args:
+            text: Text to extract title from.
+            topic: Original story topic.
+            
+        Returns:
+            Extracted or generated title.
+        """
+        lines = text.strip().split('\n')
+        for line in lines:
+            line = line.strip()
+            # Look for lines that look like titles (short, no ending punctuation)
+            if line and len(line) < 100 and not line.endswith('.') and not line.endswith(','):
+                # Skip common non-title lines
+                skip_prefixes = ['Act', 'Scene', '-', 'Title:', 'Outline', 'For each']
+                if not any(line.startswith(prefix) for prefix in skip_prefixes):
+                    # Remove markdown formatting
+                    title = line.lstrip('#').strip()
+                    if title and len(title) > 5:
+                        return title
+        
+        # Fallback: generate a better title
+        return f"The Awakening of {topic.title()}"
 
     def create_characters(self, topic: str, num_characters: int = 2) -> List[Dict[str, str]]:
         """Create detailed character profiles.
@@ -560,8 +590,9 @@ Write in engaging prose with good pacing."""
         print(f"{'='*60}\n")
         
         # Generate filename with date and sanitized title
-        safe_title = ''.join(c for c in story['title'] if c.isalnum() or c in (' ', '-', '_'))
-        filename = f"_out/scifi_story_{datetime.now().strftime('%Y%m%d')}_{safe_title[:20]}.md"
+        safe_title = ''.join(c for c in story['title'] if c.isalnum() or c in (' ', '-', '_')).strip()
+        safe_title = safe_title.replace(' ', '_')[:60]  # Limit to 60 chars and use underscores
+        filename = f"_out/scifi_story_{datetime.now().strftime('%Y%m%d')}_{safe_title}.md"
         
         with open(filename, 'w', encoding='utf-8') as f:
             # Title
