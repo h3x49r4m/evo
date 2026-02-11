@@ -1,0 +1,28 @@
+[site]
+title = "Evo"
+description = "Autonomous AI Agent System"
+url = "https://h3x49r4m.github.io/evo"
+author = "h3x49r4m"
+base_url = "/evo"
+
+[build]
+content_dir = "_content"
+output_dir = "_out/dist"
+theme_dir = "peta-rust/themes"
+drafts = false
+
+[server]
+port = 3566
+host = "127.0.0.1"
+livereload = true
+
+[search]
+enabled = true
+client_side = true
+
+[rst]
+code = { theme = "one-dark" }
+math_rendering = { engine = "katex", auto_detect = true, on_demand_loading = true }
+
+[components]
+enabled = true
