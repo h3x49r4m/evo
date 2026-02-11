@@ -1,4 +1,4 @@
-# evo
+# Evo
 
 An autonomous AI agent system with integrated cognitive architecture.
 
