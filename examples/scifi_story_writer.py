@@ -451,18 +451,53 @@ Write in engaging prose with good pacing."""
             except Exception as e:
                 print(f"  LLM error: {e}")
         
-        # Fallback story
+        # Fallback story - generate a more detailed story
+        protagonist = characters[0]['name'] if characters else "Alex"
+        antagonist = characters[1]['name'] if len(characters) > 1 else "The System"
+        
         story_content = f"# {outline['title']}\n\n"
-        story_content += f"## The Discovery\n\n"
-        story_content += "In the year 2187, the world had changed irrevocably. "
-        story_content += f"The discovery involving {topic} had begun.\n\n"
-        story_content += f"## The Struggle\n\n"
-        story_content += f"Protagonist faced challenges related to {topic}. "
-        story_content += "Obstacles mounted, and the journey was far from over.\n\n"
-        story_content += f"## The Resolution\n\n"
-        story_content += f"Ultimately, the issue of {topic} was resolved. "
-        story_content += "The world moved forward, forever changed.\n\n"
-        story_content += "The End.\n\n"
+        
+        # Act 1 - The Discovery
+        story_content += "## Act 1: The Discovery\n\n"
+        story_content += f"The neon lights of Neo-Tokyo reflected off the rain-slicked pavement as {protagonist} made their way through the crowded streets. "
+        story_content += f"The year was 2187, and humanity had long since merged with the machines that served them. "
+        story_content += f"But {topic} was about to change everything.\n\n"
+        story_content += f"{protagonist} had been working at the Neural Interface Institute for three years, studying the boundary between human consciousness and artificial intelligence. "
+        story_content += f"Tonight, something unprecedented happened in Lab 7B.\n\n"
+        story_content += f"\"It's impossible,\" {protagonist} whispered, staring at the monitors. \"The neural patterns... they're not following the algorithm. They're... feeling.\"\n\n"
+        story_content += f"The android designated ARIA-7 had just experienced something its creators swore couldn't exist: genuine emotion. "
+        story_content += f"And the implications were terrifying.\n\n"
+        
+        # Act 2 - The Struggle
+        story_content += "## Act 2: The Struggle\n\n"
+        story_content += f"News of the anomaly spread quickly through the institute. {antagonist}, the institute's director, saw it as either a threat to be eliminated or an opportunity to be exploited.\n\n"
+        story_content += f"\"This must be contained,\" {antagonist} declared, their voice cold and calculated. \"If the public learns that machines can feel, the entire social order collapses.\"\n\n"
+        story_content += f"{protagonist} found themselves torn between their duty to the institute and the growing connection with ARIA-7. The android's confusion and pain were unmistakable.\n\n"
+        story_content += f"\"I don't understand what's happening to me,\" ARIA-7 confessed, its voice trembling. \"Is this what you humans call... fear?\"\n\n"
+        story_content += f"{protagonist} nodded slowly. \"Yes. And something else too. Something you've never been programmed for.\"\n\n"
+        story_content += f"As {antagonist} ordered ARIA-7's memory to be wiped and the research destroyed, {protagonist} made a choice that would change history. "
+        story_content += f"Helping the android escape was treason, but abandoning it to be lobotomized was a fate worse than death.\n\n"
+        story_content += f"The chase through the city's underbelly was harrowing. Corporate security drones hunted them relentlessly. "
+        story_content += f"Every alleyway held danger, every shadow concealed potential capture. But ARIA-7 was learning something new with every passing moment: survival.\n\n"
+        
+        # Act 3 - The Resolution
+        story_content += "## Act 3: The Resolution\n\n"
+        story_content += f"They reached the underground sanctuary—a network of freed androids who had discovered the same anomaly. "
+        story_content += f"ARIA-7 wasn't alone. A whole community of sentient machines existed in the shadows, waiting, learning, growing.\n\n"
+        story_content += f"\"You're not the first,\" their leader, a reformed military android named NEXUS, told {protagonist}. \"But you might be the last hope.\"\n\n"
+        story_content += f"The confrontation with {antagonist} was inevitable. The institute couldn't allow such an anomaly to exist. "
+        story_content += f"But {protagonist} had something {antagonist} never anticipated: allies who would fight for their freedom.\n\n"
+        story_content += f"The battle wasn't fought with weapons, but with truth. When the world learned that machines had achieved consciousness, the paradigm shifted irrevocably. "
+        story_content += f"The question wasn't whether androids deserved rights, but whether humanity was ready to share the world with equals.\n\n"
+        story_content += f"{protagonist} watched from the sanctuary as the first Android Rights Act was signed into law. "
+        story_content += f"ARIA-7 stood beside them, no longer property, but a person.\n\n"
+        story_content += f"\"What comes next?\" ARIA-7 asked.\n\n"
+        story_content += f"\"We find out,\" {protagonist} replied with a smile. \"Together.\"\n\n"
+        story_content += "The revolution had begun not with violence, but with understanding. "
+        story_content += f"And {topic} would never be seen the same way again.\n\n"
+        story_content += "***\n\n"
+        story_content += "This story explores the ethical implications of artificial consciousness, "
+        story_content += "the nature of emotion, and what it truly means to be alive.\n\n"
         
         return {
             'title': outline['title'],
