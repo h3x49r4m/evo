@@ -127,7 +127,7 @@ class TestActionLayerWithOpenAI:
                 
                 plan = layer.plan_action({"goal": "test goal"})
                 
-                # Verify LLM was called (lines 91-93)
+                # Verify LLM was called (lines 91, 93)
                 assert mock_create.called
                 assert "steps" in plan
         except ImportError:
@@ -167,6 +167,60 @@ class TestActionLayerWithOpenAI:
                 
                 # Should fall back to simple planner (line 91 check for "steps" in llm_plan)
                 assert "steps" in plan
+        except ImportError:
+            pytest.skip("openai not available")
+    
+    def test_plan_action_with_stream_uses_streaming_api(self):
+        """Given action layer with stream=True, When planning, Then uses streaming API (line 100)."""
+        import unittest.mock as mock
+        try:
+            import openai
+            layer = ActionLayer(api_key="test-key")
+            layer.register_tool("test_tool", lambda: "result", "A test tool")
+            
+            # Mock the streaming response
+            mock_chunk = mock.MagicMock()
+            mock_chunk.choices[0].delta.content = '{"steps": [{"tool": "test_tool", "action": "execute"}]}'
+            
+            with mock.patch('evo.action.openai.ChatCompletion.create') as mock_create:
+                mock_create.return_value = [mock_chunk]
+                
+                plan = layer.plan_action({"goal": "test goal"}, stream=True)
+                
+                # Verify streaming was used (stream=True parameter)
+                assert mock_create.called
+                call_kwargs = mock_create.call_args[1]
+                assert call_kwargs.get("stream") is True
+                assert "steps" in plan
+        except ImportError:
+            pytest.skip("openai not available")
+    
+    def test_llm_plan_action_with_retry_on_failure(self):
+        """Given LLM API fails, When retrying, Then uses exponential backoff (lines 128-143)."""
+        import unittest.mock as mock
+        try:
+            import openai
+            layer = ActionLayer(api_key="test-key")
+            layer.register_tool("test_tool", lambda: "result", "A test tool")
+            
+            call_count = [0]
+            def side_effect(**kwargs):
+                call_count[0] += 1
+                if call_count[0] < 2:
+                    raise Exception("API error")
+                mock_response = mock.MagicMock()
+                mock_response.choices[0].message.content = '{"steps": [{"tool": "test_tool", "action": "execute"}]}'
+                return mock_response
+            
+            with mock.patch('evo.action.openai.ChatCompletion.create', side_effect=side_effect):
+                with mock.patch('evo.action.time.sleep') as mock_sleep:
+                    plan = layer._llm_plan_action({"goal": "test goal"})
+                    
+                    # Verify retry was attempted
+                    assert call_count[0] == 2
+                    # Verify sleep was called for backoff
+                    assert mock_sleep.called
+                    assert "steps" in plan
         except ImportError:
             pytest.skip("openai not available")
 

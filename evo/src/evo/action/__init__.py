@@ -56,7 +56,7 @@ class ActionLayer:
             self._internal_tools[name] = callable_func
     
     # Action planner
-    def plan_action(self, goal: Dict[str, Any]) -> Dict[str, Any]:
+    def plan_action(self, goal: Dict[str, Any], stream: bool = False) -> Dict[str, Any]:
         """Create an execution plan for a goal.
         
         Uses OpenAI API for LLM-based planning if API key is provided,
@@ -64,6 +64,7 @@ class ActionLayer:
         
         Args:
             goal: Dictionary containing goal description and optional context.
+            stream: Whether to use streaming response from OpenAI API.
             
         Returns:
             Dictionary with execution steps and goal.
@@ -71,7 +72,7 @@ class ActionLayer:
         # Try LLM-based planning if API key available
         if self.api_key and OPENAI_AVAILABLE:
             try:
-                llm_plan = self._llm_plan_action(goal)
+                llm_plan = self._llm_plan_action(goal, stream=stream)
                 if llm_plan and "steps" in llm_plan:
                     return llm_plan
             except Exception:
@@ -81,8 +82,16 @@ class ActionLayer:
         # Simple fallback planning
         return self._simple_plan_action(goal)
     
-    def _llm_plan_action(self, goal: Dict[str, Any]) -> Dict[str, Any]:
-        """Use OpenAI API to create an execution plan."""
+    def _llm_plan_action(self, goal: Dict[str, Any], stream: bool = False) -> Dict[str, Any]:
+        """Use OpenAI API to create an execution plan.
+        
+        Args:
+            goal: Dictionary containing goal description and optional context.
+            stream: Whether to use streaming response from OpenAI API.
+            
+        Returns:
+            Dictionary with execution steps.
+        """
         goal_text = goal.get("goal", "")
         context = goal.get("context", {})
         
@@ -108,19 +117,52 @@ Create a JSON response with this format:
 
 Only use tools from the available list. Be specific and concise."""
 
-        # Call OpenAI API
-        response = openai.ChatCompletion.create(
-            model=Config.OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": "You are an action planning assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=Config.OPENAI_TEMPERATURE
-        )
+        # Call OpenAI API with retry and exponential backoff
+        max_retries = Config.OPENAI_MAX_RETRIES
+        base_delay = Config.OPENAI_RETRY_DELAY
         
-        # Parse response
-        content = response.choices[0].message.content
-        return json.loads(content)
+        for attempt in range(max_retries):
+            try:
+                if stream:
+                    # Streaming response
+                    response = openai.ChatCompletion.create(
+                        model=Config.OPENAI_MODEL,
+                        messages=[
+                            {"role": "system", "content": "You are an action planning assistant."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=Config.OPENAI_TEMPERATURE,
+                        stream=True
+                    )
+                    # Collect streaming chunks
+                    content = ""
+                    for chunk in response:
+                        if hasattr(chunk, 'choices') and chunk.choices:
+                            delta = chunk.choices[0].delta
+                            if hasattr(delta, 'content') and delta.content:
+                                content += delta.content
+                else:
+                    # Non-streaming response
+                    response = openai.ChatCompletion.create(
+                        model=Config.OPENAI_MODEL,
+                        messages=[
+                            {"role": "system", "content": "You are an action planning assistant."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=Config.OPENAI_TEMPERATURE
+                    )
+                    content = response.choices[0].message.content
+                
+                # Parse response
+                return json.loads(content)
+                
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    # Re-raise on last attempt
+                    raise
+                # Exponential backoff: base_delay * 2^attempt
+                delay = base_delay * (2 ** attempt)
+                time.sleep(delay)
     
     def _simple_plan_action(self, goal: Dict[str, Any]) -> Dict[str, Any]:
         """Simple fallback action planner without LLM."""
