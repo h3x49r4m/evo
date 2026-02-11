@@ -1,3 +1,10 @@
+---
+name: git-manage
+description: Provides standardized git operations for the evo project with safety checks and best practices
+version: 1.0.0
+category: development-process
+---
+
 # Git Management Skill
 
 Provides standardized git operations for the evo project with safety checks and best practices.
