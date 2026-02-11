@@ -45,7 +45,7 @@ class ActionLayer:
                 if params:
                     return tool(**params)
                 return tool()
-            except Exception:
+            except Exception as e:
                 if attempt == max_retries - 1:
                     return {"error": f"Tool '{tool_name}' failed after {max_retries} attempts"}
                 time.sleep(0.1)  # Small delay between retries

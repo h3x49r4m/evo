@@ -51,8 +51,23 @@ class EvoSystem:
         self_state = self.integrative_core.self_context
         integrated = self.integrative_core.combine(routed, self_state)
 
+        # Build context for mode selection
+        context: Dict[str, Any] = {}
+        
+        # Check for user input
+        if user_input is not None:
+            context["user_input"] = True
+        
+        # Check for internal goals in self context
+        if self_state and "active_goals" in self_state and self_state["active_goals"]:
+            context["internal_goals"] = True
+        
+        # Add integrated data
+        if integrated:
+            context.update(integrated.get("data", {}))
+
         # Select mode
-        mode = self.decision.select_mode(integrated["data"] or {})
+        mode = self.decision.select_mode(context)
         decision = self.decision.route_decision(mode, integrated["data"] or {})
 
         return {
