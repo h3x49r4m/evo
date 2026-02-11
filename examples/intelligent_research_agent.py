@@ -4,6 +4,12 @@ This example demonstrates how to use the evo autonomous agent system
 to conduct automated research on a topic and generate a research paper.
 """
 
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from typing import Any, Dict, List, Optional
 from evo.main import create_evo_system
 
