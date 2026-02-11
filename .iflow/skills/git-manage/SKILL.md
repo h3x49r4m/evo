@@ -1,7 +1,7 @@
 ---
 name: git-manage
 description: Provides standardized git operations for the evo project with safety checks and best practices
-version: 1.0.0
+version: 2.0.0
 category: development-process
 ---
 
@@ -56,6 +56,69 @@ Create a commit with conventional commit format.
 ```
 Auto-detects scope from changed files.
 
+### Commit with No Verify
+```
+/git-manage commit --no-verify <type>[:scope] <description>
+```
+Skip pre-commit checks for trivial commits (e.g., typos, docs).
+
+### Diff
+```
+/git-manage diff [staged|unstaged|<commit>]
+```
+Show changes. Default: unstaged changes. Use `staged` for staged changes.
+
+### Undo Last Commit
+```
+/git-manage undo [soft|hard]
+```
+Undo the last commit. `soft` keeps changes (default), `hard` discards them.
+
+### Amend Last Commit
+```
+/git-manage amend [description]
+```
+Modify the last commit. Add description to update commit message.
+
+### Stash Operations
+```
+/git-manage stash save <message>    # Save changes
+/git-manage stash pop               # Restore and remove stash
+/git-manage stash list              # List stashes
+/git-manage stash drop <index>      # Remove specific stash
+```
+
+### Log
+```
+/git-manage log [oneline|full|n=<count>]
+```
+Show commit history. Default: `oneline`. Use `full` for detailed view.
+
+### Revert
+```
+/git-manage revert <commit>
+```
+Revert a specific commit, creating a new commit with opposite changes.
+
+### Clean
+```
+/git-manage clean [dry-run|force]
+```
+Remove untracked files. `dry-run` shows what would be removed (default), `force` removes them.
+
+### Changelog
+```
+/git-manage changelog [from=<tag>|<commit>] [to=<tag>|<commit>]
+```
+Generate changelog from commit messages between two points.
+
+### Tag Operations
+```
+/git-manage tag create <name> [message]    # Create tag
+/git-manage tag list                       # List tags
+/git-manage tag delete <name>              # Delete tag
+```
+
 ### Push
 ```
 /git-manage push [remote] [branch]
@@ -72,7 +135,7 @@ Push commits with pre-push validation.
 
 ## Pre-Commit Checks
 
-Before any commit, the skill runs:
+Before any commit (unless `--no-verify` is used), the skill runs:
 
 1. **Test Suite** - `uv run pytest tests/ -v --cov`
 2. **Architecture Check** - Invokes `architecture-check` skill
@@ -102,7 +165,17 @@ Before any commit, the skill runs:
 
 [optional body]
 
-Files changed (branch: <branch name>): <files>
+Changes:
+- <description 1>
+- <description 2>
+- ...
+
+---
+Branch: <branch name>
+Files changed: 
+- <file1>
+- <file2>
+- ...
 
 Verification:
 - Tests: <count> passed
@@ -153,8 +226,58 @@ Before `reset --hard` or `clean -fd`:
 - `5` - Secrets detected
 - `6` - Coverage below threshold
 - `7` - Branch protection violation
+- `8` - No stash to pop
+- `9` - Invalid commit hash
+- `10` - Tag not found
 
 ## Examples
+
+### View Changes Before Committing
+```bash
+# Show unstaged changes
+/git-manage diff
+
+# Show staged changes
+/git-manage diff staged
+
+# Show specific commit changes
+/git-manage diff abc1234
+```
+
+### Undo and Amend
+```bash
+# Undo last commit (keep changes)
+/git-manage undo soft
+
+# Add forgotten file and amend
+/git-manage add forgotten_file.py
+/git-manage amend "add missing file"
+```
+
+### Stash Workflow
+```bash
+# Save work in progress
+/git-manage stash save "WIP: feature x"
+
+# Switch branches and work
+/git-manage branch switch feat/y
+
+# Return and restore work
+/git-manage branch switch feat/x
+/git-manage stash pop
+```
+
+### View History
+```bash
+# Quick history
+/git-manage log
+
+# Detailed history
+/git-manage log full
+
+# Last 10 commits
+/git-manage log n=10
+```
 
 ### Complete Workflow
 ```bash
