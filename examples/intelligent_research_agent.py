@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from typing import Any, Dict, List, Optional
 from evo.main import create_evo_system
+from evo.config import Config
 
 
 class IntelligentResearchAgent:
@@ -24,6 +25,7 @@ class IntelligentResearchAgent:
         self.memory = self.system.memory
         self.safety = self.system.safety
         self.llm_client = self.system.action.llm_client if hasattr(self.system.action, 'llm_client') else None
+        self.model = Config.LLM_MODEL  # Get model from Config
         
         # Register research tools
         self._register_tools()
@@ -144,7 +146,7 @@ Provide detailed research findings for this phase. Include:
 Be thorough and specific. Provide at least 3-4 substantial paragraphs."""
                 
                 llm_response = self.llm_client.respond(
-                    model=self.system.action.model,
+                    model=self.model,
                     messages=[{"role": "user", "content": prompt}]
                 )
                 
@@ -230,7 +232,7 @@ The abstract should:
 Write in academic style."""
                 
                 abstract = self.llm_client.respond(
-                    model=self.system.action.model,
+                    model=self.model,
                     messages=[{"role": "user", "content": prompt}]
                 )
                 return abstract
@@ -272,7 +274,7 @@ The introduction should:
 - Be 500-600 words"""
                 
                 intro = self.llm_client.respond(
-                    model=self.system.action.model,
+                    model=self.model,
                     messages=[{"role": "user", "content": intro_prompt}]
                 )
                 sections.append({'title': 'Introduction', 'content': intro})
@@ -288,7 +290,7 @@ The methodology should describe:
 - Be 400-500 words"""
                 
                 method = self.llm_client.respond(
-                    model=self.system.action.model,
+                    model=self.model,
                     messages=[{"role": "user", "content": method_prompt}]
                 )
                 sections.append({'title': 'Methodology', 'content': method})
@@ -311,7 +313,7 @@ The discussion should:
 - Be 500-600 words"""
                 
                 discussion = self.llm_client.respond(
-                    model=self.system.action.model,
+                    model=self.model,
                     messages=[{"role": "user", "content": discussion_prompt}]
                 )
                 sections.append({'title': 'Discussion', 'content': discussion})
@@ -327,7 +329,7 @@ The conclusion should:
 - Be 300-400 words"""
                 
                 conclusion = self.llm_client.respond(
-                    model=self.system.action.model,
+                    model=self.model,
                     messages=[{"role": "user", "content": conclusion_prompt}]
                 )
                 sections.append({'title': 'Conclusion', 'content': conclusion})
