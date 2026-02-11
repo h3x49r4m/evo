@@ -65,6 +65,31 @@ class TestInternalGoals:
         engine = GoalEngine()
         engine.add_internal_goal("self_improve", "Improve myself")
         assert "self_improve" in engine.list_internal_goals()
+    
+    def test_add_internal_goal_with_invalid_name_raises_value_error(self):
+        """Given goal engine, When adding internal goal with invalid name, Then raises ValueError (line 21)."""
+        engine = GoalEngine()
+        with pytest.raises(ValueError, match="Invalid goal name"):
+            engine.add_internal_goal("", "Empty name")
+    
+    def test_list_internal_goals_returns_all_internal_goal_names(self):
+        """Given goal engine with internal goals, When listing, Then returns all names (line 38)."""
+        engine = GoalEngine()
+        engine.add_internal_goal("goal1", "Goal 1")
+        engine.add_internal_goal("goal2", "Goal 2")
+        engine.add_internal_goal("goal3", "Goal 3")
+        
+        goals = engine.list_internal_goals()
+        assert len(goals) == 3
+        assert "goal1" in goals
+        assert "goal2" in goals
+        assert "goal3" in goals
+    
+    def test_list_internal_goals_returns_empty_when_no_goals(self):
+        """Given goal engine without internal goals, When listing, Then returns empty list."""
+        engine = GoalEngine()
+        goals = engine.list_internal_goals()
+        assert goals == []
 
 
 class TestGoalEvaluation:

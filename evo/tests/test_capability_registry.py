@@ -141,3 +141,65 @@ class TestDynamicCapabilityManagement:
         for tool in registry.list_tools():
             registry.unregister_tool(tool)
         assert len(registry.list_tools()) == 0
+
+
+class TestSearchIndexManagement:
+    """Tests for search index functionality."""
+    
+    def test_register_tool_with_same_name_updates_search_index(self):
+        """Given registry with tool, When registering same name again, Then updates search index (line 27)."""
+        registry = CapabilityRegistry()
+        registry.register_tool("file_read", "Read files")
+        registry.register_tool("file_read", "Read files from disk")
+        
+        # Search index should have been updated
+        results = registry.search_tools("disk")
+        assert "file_read" in results
+    
+    def test_search_tools_with_empty_query_returns_empty_list(self):
+        """Given registry with tools, When searching with empty query, Then returns empty list (line 48)."""
+        registry = CapabilityRegistry()
+        registry.register_tool("tool1", "Tool 1")
+        registry.register_tool("tool2", "Tool 2")
+        
+        assert registry.search_tools("") == []
+        assert registry.search_tools("   ") == []
+    
+    def test_search_tools_fallback_to_linear_search(self):
+        """Given registry with tools, When search doesn't match tokens, Then falls back to linear search."""
+        registry = CapabilityRegistry()
+        registry.register_tool("file_reader", "Read files")
+        registry.register_tool("web_fetcher", "Fetch web content")
+        
+        # Partial match that might not be in token index
+        results = registry.search_tools("read")
+        assert len(results) > 0
+
+
+class TestValidationErrors:
+    """Tests for validation error paths."""
+    
+    def test_register_tool_with_invalid_name_raises_value_error(self):
+        """Given registry, When registering tool with invalid name, Then raises ValueError (line 101)."""
+        registry = CapabilityRegistry()
+        with pytest.raises(ValueError, match="Invalid tool name"):
+            registry.register_tool("invalid-name!", "Invalid tool")
+    
+    def test_register_skill_with_invalid_name_raises_value_error(self):
+        """Given registry, When registering skill with invalid name, Then raises ValueError (line 105)."""
+        registry = CapabilityRegistry()
+        with pytest.raises(ValueError, match="Invalid skill name"):
+            registry.register_skill("", "Empty name")
+    
+    def test_register_skill_with_invalid_level_raises_value_error(self):
+        """Given registry, When registering skill with invalid level, Then raises ValueError (line 105)."""
+        registry = CapabilityRegistry()
+        with pytest.raises(ValueError, match="Invalid skill level"):
+            registry.register_skill("test_skill", "Test", level=1.5)
+    
+    def test_update_skill_level_with_invalid_level_raises_value_error(self):
+        """Given registry with skill, When updating with invalid level, Then raises ValueError (line 129)."""
+        registry = CapabilityRegistry()
+        registry.register_skill("test_skill", "Test", level=0.5)
+        with pytest.raises(ValueError, match="Invalid skill level"):
+            registry.update_skill_level("test_skill", -0.1)

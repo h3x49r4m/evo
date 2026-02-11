@@ -43,6 +43,18 @@ class TestEpisodicMemory:
         await episodic_memory.cleanup()
     
     @pytest.mark.asyncio
+    async def test_episodic_memory_init_without_chromadb_falls_back_to_dict(self):
+        """Given new episodic memory without ChromaDB, When initialized, Then uses dictionary fallback (lines 10-11)."""
+        episodic_memory = MemorySystem.EpisodicMemory(
+            collection_name="test_episodes",
+            use_chromadb=False
+        )
+        # Should use in-memory dictionary
+        assert episodic_memory.collection == episodic_memory  # Self fallback
+        assert episodic_memory.client is None
+        assert isinstance(episodic_memory._experiences, dict)
+    
+    @pytest.mark.asyncio
     async def test_episodic_memory_store_experience_returns_id(self):
         """Given an episodic memory instance, When storing an experience, Then returns experience ID."""
         episodic_memory = MemorySystem.EpisodicMemory(collection_name="test_episodes")
@@ -62,6 +74,22 @@ class TestEpisodicMemory:
         similar = await episodic_memory.retrieve_similar("code_write", k=1)
         assert len(similar) >= 1
         await episodic_memory.cleanup()
+    
+    @pytest.mark.asyncio
+    async def test_episodic_memory_cleanup_without_chromadb_clears_dict(self):
+        """Given episodic memory without ChromaDB, When cleaning up, Then clears dictionary (line 134)."""
+        episodic_memory = MemorySystem.EpisodicMemory(
+            collection_name="test_episodes",
+            use_chromadb=False
+        )
+        # Store some experiences
+        await episodic_memory.store_experience({"action": "test1"})
+        await episodic_memory.store_experience({"action": "test2"})
+        assert len(episodic_memory._experiences) == 2
+        
+        # Cleanup should clear the dictionary
+        await episodic_memory.cleanup()
+        assert len(episodic_memory._experiences) == 0
 
 
 class TestSemanticMemory:

@@ -135,3 +135,24 @@ def test_filter_and_route_with_priority_map():
     assert routed is not None
     assert routed["context"] == "user"
     assert routed["data"]["source"] == "user"
+
+
+def test_config_get_all_returns_all_configuration_values():
+    """Given Config class, When calling get_all, Then returns dictionary with all config values (line 102)."""
+    config_dict = Config.get_all()
+    
+    assert isinstance(config_dict, dict)
+    assert "action_retry_delay" in config_dict
+    assert "action_max_retries" in config_dict
+    assert "capability_default_level" in config_dict
+    assert "safety_time_limit" in config_dict
+    assert "safety_storage_limit" in config_dict
+    assert "safety_iteration_limit" in config_dict
+    assert "memory_use_chromadb" in config_dict
+    assert "openai_model" in config_dict
+    assert "log_level" in config_dict
+    
+    # Verify values match Config class attributes
+    assert config_dict["action_retry_delay"] == Config.ACTION_RETRY_DELAY
+    assert config_dict["action_max_retries"] == Config.ACTION_MAX_RETRIES
+    assert config_dict["capability_default_level"] == Config.CAPABILITY_DEFAULT_LEVEL
