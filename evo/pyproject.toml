@@ -12,6 +12,9 @@ dependencies = [
     "pytest-cov>=7.0.0",
 ]
 
+[project.scripts]
+evo = "evo.main:main"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
