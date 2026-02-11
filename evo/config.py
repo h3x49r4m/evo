@@ -1,9 +1,14 @@
 """Configuration management for the evo autonomous agent system.
 
 This module provides centralized configuration management with support for
-environment variables. All magic numbers and configuration values are
-consolidated here to enable easy customization across different deployment
-environments.
+environment variables and JSON configuration files. All magic numbers and
+configuration values are consolidated here to enable easy customization across
+different deployment environments.
+
+Configuration Loading Priority:
+    1. Environment variables (highest priority)
+    2. .env/llm_providers.json JSON configuration
+    3. Default values (lowest priority)
 
 Configuration Categories:
     - Action Layer: Retry delays, max retries, LLM settings
@@ -17,6 +22,12 @@ Environment Variables:
     Action Configuration:
         - ACTION_RETRY_DELAY: Delay between retry attempts (default: 0.1)
         - ACTION_MAX_RETRIES: Maximum retry attempts (default: 3)
+    
+    LLM Configuration:
+        - LLM_PROVIDER: LLM provider name (iflow, openrouter)
+        - LLM_API_KEY: API key for LLM provider
+        - LLM_BASE_URL: Base URL for LLM API
+        - LLM_MODEL: Model identifier to use
     
     Capability Configuration:
         - CAPABILITY_DEFAULT_LEVEL: Default skill level (default: 0.5)
@@ -51,12 +62,37 @@ Example:
     >>> # Note: Must be set before the module is imported
 """
 
-from typing import Optional
+from typing import Optional, Dict, Any
 import os
+import json
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+
+def _load_llm_providers_config() -> Dict[str, Any]:
+    """Load LLM provider configuration from .env/llm_providers.json.
+    
+    Returns:
+        Dictionary containing LLM provider configuration.
+        Returns empty dict if file doesn't exist or is invalid.
+    """
+    config_path = Path(__file__).parent.parent / ".env" / "llm_providers.json"
+    
+    if not config_path.exists():
+        return {}
+    
+    try:
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return {}
+
+
+# Load LLM config once at module import
+_LLM_CONFIG = _load_llm_providers_config()
 
 
 class Config:
@@ -88,10 +124,18 @@ class Config:
     MEMORY_COLLECTION_NAME: str = os.getenv("MEMORY_COLLECTION_NAME", "episodes")
     
     # LLM Provider Configuration
-    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "iflow")  # Options: iflow, openrouter, openai
-    LLM_API_KEY: Optional[str] = os.getenv("LLM_API_KEY")
-    LLM_BASE_URL: Optional[str] = os.getenv("LLM_BASE_URL")
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "deepseek-v3")
+    # Priority: env var > JSON config > default
+    _default_provider = _LLM_CONFIG.get("default_provider", "iflow") if _LLM_CONFIG else "iflow"
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", _default_provider)
+    
+    # Load provider-specific config from JSON
+    _provider_config = {}
+    if _LLM_CONFIG and "providers" in _LLM_CONFIG and LLM_PROVIDER in _LLM_CONFIG["providers"]:
+        _provider_config = _LLM_CONFIG["providers"][LLM_PROVIDER]
+    
+    LLM_API_KEY: Optional[str] = os.getenv("LLM_API_KEY", _provider_config.get("api_key"))
+    LLM_BASE_URL: Optional[str] = os.getenv("LLM_BASE_URL", _provider_config.get("base_url"))
+    LLM_MODEL: str = os.getenv("LLM_MODEL", _provider_config.get("model", "deepseek-v3"))
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.7"))
     LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "3"))
     LLM_RETRY_DELAY: float = float(os.getenv("LLM_RETRY_DELAY", "1.0"))

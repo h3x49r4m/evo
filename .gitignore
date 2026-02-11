@@ -58,3 +58,6 @@ logs/
 *.tmp
 *.temp
 .cache/
+
+# env
+.env
