@@ -61,3 +61,7 @@ logs/
 
 # env
 .env
+
+# Output
+_out/
+research_paper.md

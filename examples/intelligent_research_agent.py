@@ -276,7 +276,7 @@ def main():
     paper = agent.generate_paper(result)
     
     # Export paper
-    output_file = "research_paper.md"
+    output_file = "_out/research_paper.md"
     agent.export_paper(paper, output_file)
     
     print(f"\n{'='*60}")
