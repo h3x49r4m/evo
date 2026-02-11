@@ -171,7 +171,9 @@ Changes:
 - ...
 
 ---
+
 Branch: <branch name>
+
 Files changed: 
 - <file1>
 - <file2>
