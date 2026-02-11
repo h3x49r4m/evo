@@ -18,19 +18,26 @@ from evo.integrative_core import IntegrativeCore
 class EvoSystem:
     """Main system integrating all architecture components."""
 
-    def __init__(self) -> None:
-        """Initialize the evo system with all components."""
+    def __init__(self, memory: Optional[MemorySystem] = None) -> None:
+        """Initialize the evo system with all components.
+        
+        Args:
+            memory: Optional shared MemorySystem instance for dependency injection.
+                   If not provided, creates a new instance.
+        """
+        # Shared memory system (dependency injection)
+        self.memory = memory or MemorySystem()
+        
         # Core components
         self.perception = PerceptionGateway()
         self.decision = DecisionEngine()
         self.goal = GoalEngine()
         self.capability = CapabilityRegistry()
-        self.action = ActionLayer()
-        self.memory = MemorySystem()
+        self.action = ActionLayer(memory=self.memory, capability_registry=self.capability)
         self.metacognition = MetacognitionLayer()
         self.exploration = ExplorationEngine()
         self.safety = SafetyLayer()
-        self.feedback = FeedbackLoop()
+        self.feedback = FeedbackLoop(memory=self.memory)
         self.integrative_core = IntegrativeCore()
 
         # Handlers

@@ -1,14 +1,20 @@
 """Feedback Loop - Observation processor and memory manager."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from evo.memory import MemorySystem
 
 
 class FeedbackLoop:
     """Observation processor and memory manager."""
     
-    def __init__(self) -> None:
-        self._memory = MemorySystem(collection_name="feedback")
+    def __init__(self, memory: Optional[MemorySystem] = None) -> None:
+        """Initialize the feedback loop.
+        
+        Args:
+            memory: Optional shared MemorySystem instance for dependency injection.
+                   If not provided, creates a new instance.
+        """
+        self._memory = memory or MemorySystem(collection_name="feedback")
         self._observations: List[Dict[str, Any]] = []
     
     # Observation processor

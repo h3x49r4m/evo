@@ -15,22 +15,45 @@ except ImportError:
 class ActionLayer:
     """Action planner and tool executor with LLM-based action planning."""
     
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        memory: Optional[Any] = None,
+        capability_registry: Optional[Any] = None
+    ) -> None:
         """Initialize the action layer.
         
         Args:
             api_key: Optional OpenAI API key for LLM-based planning.
+            memory: Optional shared MemorySystem instance for dependency injection.
+            capability_registry: Optional CapabilityRegistry for tool registration.
+                                 If not provided, creates a new instance.
         """
-        self._tools: Dict[str, Callable] = {}
         self.api_key = api_key or Config.OPENAI_API_KEY
+        self.memory = memory
+        self.capability_registry = capability_registry
         
         if self.api_key and OPENAI_AVAILABLE:
             openai.api_key = self.api_key
     
-    # Tool registration
-    def register_tool(self, name: str, callable_func: Callable) -> None:
-        """Register a tool for execution."""
-        self._tools[name] = callable_func
+    # Tool registration (delegates to capability_registry if available)
+    def register_tool(self, name: str, callable_func: Callable, description: str = "") -> None:
+        """Register a tool for execution.
+        
+        Delegates to capability_registry if available, otherwise uses internal storage.
+        
+        Args:
+            name: Name of the tool.
+            callable_func: Function to execute for the tool.
+            description: Optional description of the tool.
+        """
+        if self.capability_registry:
+            self.capability_registry.register_tool(name, description, callable_func)
+        else:
+            # Fallback: create internal registry if none provided
+            if not hasattr(self, '_internal_tools'):
+                self._internal_tools: Dict[str, Callable] = {}
+            self._internal_tools[name] = callable_func
     
     # Action planner
     def plan_action(self, goal: Dict[str, Any]) -> Dict[str, Any]:
@@ -62,7 +85,14 @@ class ActionLayer:
         """Use OpenAI API to create an execution plan."""
         goal_text = goal.get("goal", "")
         context = goal.get("context", {})
-        available_tools = list(self._tools.keys())
+        
+        # Get available tools from capability_registry or internal storage
+        if self.capability_registry:
+            available_tools = self.capability_registry.list_tools()
+        elif hasattr(self, '_internal_tools'):
+            available_tools = list(self._internal_tools.keys())
+        else:
+            available_tools = []
         
         # Build prompt for LLM
         prompt = f"""You are an AI assistant that plans actions to achieve goals.
@@ -119,7 +149,16 @@ Only use tools from the available list. Be specific and concise."""
         Returns:
             Result from tool execution or error dictionary.
         """
-        if tool_name not in self._tools:
+        # Get tool from capability_registry or internal storage
+        tool = None
+        if self.capability_registry:
+            tool_data = self.capability_registry.get_tool(tool_name)
+            if tool_data and tool_data.get("callable"):
+                tool = tool_data["callable"]
+        elif hasattr(self, '_internal_tools') and tool_name in self._internal_tools:
+            tool = self._internal_tools[tool_name]
+        
+        if tool is None:
             return {"error": f"Tool '{tool_name}' not found"}
         
         params = params or {}
@@ -127,7 +166,6 @@ Only use tools from the available list. Be specific and concise."""
         
         for attempt in range(max_retries):
             try:
-                tool = self._tools[tool_name]
                 if params:
                     return tool(**params)
                 return tool()

@@ -14,7 +14,26 @@ class MemorySystem:
     """Main memory system integrating all three memory tiers."""
     
     class WorkingMemory:
-        """Current context window, immediate state."""
+        """Current context window for immediate state management.
+        
+        WorkingMemory provides short-term storage for the current context,
+        including recent observations, active goals, and immediate results.
+        It acts as a fast-access buffer that holds information relevant to
+        the current task or conversation.
+        
+        Key characteristics:
+        - Fast access and storage
+        - Limited capacity (cleared as needed)
+        - Temporary storage for current session
+        - Used for context passing between components
+        
+        Example:
+            >>> memory = MemorySystem.WorkingMemory()
+            >>> memory.store("user_input", "What is the weather?")
+            >>> memory.store("goal", "Provide weather information")
+            >>> memory.retrieve("user_input")
+            'What is the weather?'
+        """
         
         def __init__(self) -> None:
             self.context: Dict[str, Any] = {}
@@ -32,7 +51,32 @@ class MemorySystem:
             self.context.clear()
     
     class EpisodicMemory:
-        """Vector database of experiences, searchable by semantic similarity."""
+        """Vector database for storing and retrieving experiences by semantic similarity.
+        
+        EpisodicMemory maintains a collection of past experiences, actions, and outcomes.
+        It uses vector embeddings to enable semantic search, allowing the system to
+        find similar past situations even when the exact query doesn't match stored data.
+        
+        Supports two storage backends:
+        - ChromaDB: Full vector database with semantic search (requires chromadb package)
+        - In-memory dictionary: Simple fallback when ChromaDB is unavailable
+        
+        Key characteristics:
+        - Persistent storage of experiences
+        - Semantic similarity search
+        - Vector embeddings for intelligent retrieval
+        - Useful for pattern recognition and learning
+        
+        Example:
+            >>> memory = MemorySystem.EpisodicMemory()
+            >>> experience = {
+            ...     "action": "search_web",
+            ...     "result": "Found 5 articles",
+            ...     "context": {"query": "AI research"}
+            ... }
+            >>> exp_id = await memory.store_experience(experience)
+            >>> similar = await memory.retrieve_similar("web search results", k=3)
+        """
         
         def __init__(self, collection_name: str = "episodes", use_chromadb: bool = True) -> None:
             self.collection_name = collection_name
@@ -96,7 +140,29 @@ class MemorySystem:
                 self._experiences.clear()
     
     class SemanticMemory:
-        """Persistent knowledge base, not overwritten by new experiences."""
+        """Persistent knowledge base for storing facts that are not overwritten by new experiences.
+        
+        SemanticMemory stores stable, factual knowledge that the system has learned
+        over time. Unlike episodic memory which records specific events, semantic
+        memory captures general knowledge, rules, and patterns that persist across
+        sessions.
+        
+        Key characteristics:
+        - Key-value storage for facts
+        - Persistent and stable (not overwritten)
+        - Used for learned knowledge and rules
+        - Supports fact updates (overwrites existing facts)
+        
+        Example:
+            >>> memory = MemorySystem.SemanticMemory()
+            >>> memory.add_fact("system_name", "evo")
+            >>> memory.add_fact("max_retries", 3)
+            >>> memory.retrieve_fact("system_name")
+            'evo'
+            >>> memory.add_fact("max_retries", 5)  # Updates existing fact
+            >>> memory.retrieve_fact("max_retries")
+            5
+        """
         
         def __init__(self) -> None:
             self.knowledge: Dict[str, Any] = {}
