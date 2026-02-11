@@ -41,7 +41,13 @@ uv sync
 
 ## Configuration
 
-Create `.env/llm_providers.json` for LLM configuration:
+Copy the sample configuration file:
+
+```bash
+cp .env/llm_providers.json.sample .env/llm_providers.json
+```
+
+Then edit `.env/llm_providers.json` with your LLM configuration:
 
 ```json
 {
@@ -55,7 +61,7 @@ Create `.env/llm_providers.json` for LLM configuration:
 }
 ```
 
-See `.env/llm_providers.json.sample` for the full template.
+See `.env/llm_providers.json.sample` for the full template and available options.
 
 ## Running
 
@@ -102,6 +108,3 @@ The system is built on a cognitive architecture with these layers:
 - **Feedback Loop**: Learning and improvement
 - **Integrative Core**: System coordination
 
-## License
-
-MIT
