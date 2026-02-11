@@ -1,3 +1,10 @@
+---
+name: tdd-enforce
+description: Ensures Test-Driven Development (TDD) workflow is followed throughout the development process
+version: 1.0.0
+category: development-process
+---
+
 # TDD Enforcement Skill
 
 Ensures Test-Driven Development (TDD) workflow is followed throughout the development process.

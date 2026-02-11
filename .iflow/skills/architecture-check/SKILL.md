@@ -1,3 +1,10 @@
+---
+name: architecture-check
+description: Verifies that the codebase implementation aligns with the architecture defined in docs/architecture.md
+version: 1.0.0
+category: code-quality
+---
+
 # Architecture Check Skill
 
 Verifies that the codebase implementation aligns with the architecture defined in `evo/docs/architecture.md`.
