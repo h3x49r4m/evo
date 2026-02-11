@@ -3,18 +3,19 @@
 import logging
 import sys
 from typing import Optional
+from evo.config import Config
 
 # Create logger
 logger = logging.getLogger("evo")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(getattr(logging, Config.LOG_LEVEL.upper(), logging.INFO))
 
 # Create console handler
 console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setLevel(logging.INFO)
+console_handler.setLevel(getattr(logging, Config.LOG_LEVEL.upper(), logging.INFO))
 
 # Create formatter
 formatter = logging.Formatter(
-    fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    fmt=Config.LOG_FORMAT,
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 console_handler.setFormatter(formatter)
