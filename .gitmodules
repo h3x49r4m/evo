@@ -1,0 +1,3 @@
+[submodule "docs/peta-rust"]
+	path = docs/peta-rust
+	url = git@github.com:h3x49r4m/peta-rust.git
