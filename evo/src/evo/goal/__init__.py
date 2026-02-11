@@ -1,6 +1,10 @@
-"""Goal Engine - External and internal goal management."""
+"""Goal Engine - External and internal goal management with validation."""
 
 from typing import Any, Dict, List
+from evo.validation import validate_goal_name
+from evo.logging import get_logger
+
+logger = get_logger("evo.goal")
 
 
 class GoalEngine:
@@ -13,11 +17,15 @@ class GoalEngine:
     # External goals
     def add_external_goal(self, name: str, description: str) -> None:
         """Add an external goal from user."""
+        if not validate_goal_name(name):
+            raise ValueError(f"Invalid goal name: {name}")
         self._external_goals[name] = description
+        logger.info(f"Added external goal: {name}")
     
     def remove_external_goal(self, name: str) -> None:
         """Remove an external goal."""
         self._external_goals.pop(name, None)
+        logger.info(f"Removed external goal: {name}")
     
     def list_external_goals(self) -> List[str]:
         """List all external goal names."""
@@ -26,7 +34,10 @@ class GoalEngine:
     # Internal goals
     def add_internal_goal(self, name: str, description: str) -> None:
         """Add an internal goal."""
+        if not validate_goal_name(name):
+            raise ValueError(f"Invalid goal name: {name}")
         self._internal_goals[name] = description
+        logger.debug(f"Added internal goal: {name}")
     
     def list_internal_goals(self) -> List[str]:
         """List all internal goal names."""

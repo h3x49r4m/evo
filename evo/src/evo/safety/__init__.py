@@ -1,8 +1,9 @@
-"""Safety & Constraints Layer - Hard-coded boundaries and user override with logging."""
+"""Safety & Constraints Layer - Hard-coded boundaries and user override with config."""
 
 import time
 from typing import Any, Dict, List, Optional, Set
 from evo.logging import get_logger
+from evo.config import Config
 
 logger = get_logger("evo.safety")
 
@@ -28,13 +29,14 @@ class SafetyLayer:
     
     def __init__(
         self,
-        time_limit: int = 3600,
-        storage_limit: int = 107374182400,  # 100GB
-        iteration_limit: int = 1000
+        time_limit: Optional[int] = None,
+        storage_limit: Optional[int] = None,
+        iteration_limit: Optional[int] = None
     ) -> None:
-        self.time_limit = time_limit
-        self.storage_limit = storage_limit
-        self.iteration_limit = iteration_limit
+        """Initialize safety layer with limits from config or parameters."""
+        self.time_limit = time_limit or Config.SAFETY_TIME_LIMIT
+        self.storage_limit = storage_limit or Config.SAFETY_STORAGE_LIMIT
+        self.iteration_limit = iteration_limit or Config.SAFETY_ITERATION_LIMIT
         self._paused: bool = False
         self._blocked_actions: Set[str] = set()
         self._time_tracking: Dict[str, float] = {}

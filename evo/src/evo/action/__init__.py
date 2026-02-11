@@ -1,8 +1,9 @@
-"""Action Layer - Action planner and tool executor with LLM integration."""
+"""Action Layer - Action planner and tool executor with LLM integration and config."""
 
 import json
 import time
 from typing import Any, Callable, Dict, List, Optional
+from evo.config import Config
 
 try:
     import openai
@@ -21,10 +22,10 @@ class ActionLayer:
             api_key: Optional OpenAI API key for LLM-based planning.
         """
         self._tools: Dict[str, Callable] = {}
-        self.api_key = api_key
+        self.api_key = api_key or Config.OPENAI_API_KEY
         
-        if api_key and OPENAI_AVAILABLE:
-            openai.api_key = api_key
+        if self.api_key and OPENAI_AVAILABLE:
+            openai.api_key = self.api_key
     
     # Tool registration
     def register_tool(self, name: str, callable_func: Callable) -> None:
@@ -79,12 +80,12 @@ Only use tools from the available list. Be specific and concise."""
 
         # Call OpenAI API
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model=Config.OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": "You are an action planning assistant."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7
+            temperature=Config.OPENAI_TEMPERATURE
         )
         
         # Parse response
@@ -107,7 +108,7 @@ Only use tools from the available list. Be specific and concise."""
         return {"steps": steps, "goal": goal}
     
     # Tool executor
-    def execute_tool(self, tool_name: str, params: Dict[str, Any] = None, max_retries: int = 1) -> Any:
+    def execute_tool(self, tool_name: str, params: Dict[str, Any] = None, max_retries: Optional[int] = None) -> Any:
         """Execute a tool with optional retry logic.
         
         Args:
@@ -122,6 +123,7 @@ Only use tools from the available list. Be specific and concise."""
             return {"error": f"Tool '{tool_name}' not found"}
         
         params = params or {}
+        max_retries = max_retries or Config.ACTION_MAX_RETRIES
         
         for attempt in range(max_retries):
             try:
@@ -132,6 +134,6 @@ Only use tools from the available list. Be specific and concise."""
             except Exception as e:
                 if attempt == max_retries - 1:
                     return {"error": f"Tool '{tool_name}' failed after {max_retries} attempts"}
-                time.sleep(0.1)  # Small delay between retries
+                time.sleep(Config.ACTION_RETRY_DELAY)  # Use config value
         
         return {"error": "Unknown error"}
