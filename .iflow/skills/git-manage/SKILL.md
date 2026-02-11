@@ -100,6 +100,8 @@ Before any commit, the skill runs:
 ```
 <type>[<scope>]: <description>
 
+Branch: <branch_name>
+
 Changes:
 - List of affected files
 
