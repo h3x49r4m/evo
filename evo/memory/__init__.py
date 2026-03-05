@@ -3,6 +3,7 @@
 import json
 from typing import Any, Dict, List, Optional
 from evo.types import WorkingMemoryValue, SemanticMemoryValue
+from evo.config import Config
 
 try:
     import chromadb
@@ -114,8 +115,9 @@ class MemorySystem:
             
             return experience_id
         
-        async def retrieve_similar(self, query: str, k: int = 5) -> List[Dict[str, Any]]:
+        async def retrieve_similar(self, query: str, k: int = None) -> List[Dict[str, Any]]:
             """Retrieve k most similar experiences to the query."""
+            k = k or Config.SIMILAR_EXPERIENCES_DEFAULT_K
             if self.use_chromadb:
                 # Query ChromaDB for similar experiences
                 results = self.collection.query(

@@ -96,19 +96,8 @@ Provide a concise analysis in JSON format with keys: genre, theme, elements, set
                     'characters': ['Protagonist', 'Antagonist'],
                     'safe': True
                 }
-            except Exception:
-                pass
-        
-        # Fallback analysis
-        return {
-            'topic': topic,
-            'genre': 'science fiction',
-            'theme': f'Exploration of {topic} in a futuristic setting',
-            'elements': ['Technology', 'Future society'],
-            'setting': 'Futuristic world',
-            'characters': ['Protagonist', 'Antagonist'],
-            'safe': True
-        }
+            except Exception as e:
+                raise RuntimeError(f"Failed to analyze topic: {e}") from e
 
     def generate_outline(self, topic: str) -> Dict[str, Any]:
         """Generate story outline with acts and scenes.

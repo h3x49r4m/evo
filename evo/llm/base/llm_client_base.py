@@ -3,6 +3,7 @@
 import httpx
 from typing import List, Dict, Any, Optional
 from openai import OpenAI
+from evo import LLMConnectionError, LLMResponseError, LLMStreamingError
 
 
 class LLMClientBase:
@@ -34,8 +35,8 @@ class LLMClientBase:
         """Warm up the client by listing available models."""
         try:
             self.client.models.list()
-        except Exception:
-            pass
+        except Exception as e:
+            raise LLMConnectionError(f"LLM warmup failed: {e}") from e
 
     def respond(
         self,
@@ -52,6 +53,9 @@ class LLMClientBase:
             
         Returns:
             The LLM response content as a string.
+            
+        Raises:
+            LLMResponseError: If LLM response fails or is invalid.
         """
         try:
             if response_format:
@@ -68,8 +72,7 @@ class LLMClientBase:
             return response.choices[0].message.content.strip()
 
         except Exception as e:
-            print(f"ERROR: LLM responded failed (msg: {e}).")
-            return ''
+            raise LLMResponseError(f"LLM response failed: {e}") from e
 
     def respond_streaming(
         self,
@@ -88,6 +91,9 @@ class LLMClientBase:
             
         Returns:
             The complete LLM response content as a string.
+            
+        Raises:
+            LLMStreamingError: If LLM streaming response fails.
         """
         try:
             import time
@@ -120,5 +126,4 @@ class LLMClientBase:
             return results
 
         except Exception as e:
-            print(f"ERROR: LLM responded failed (msg: {e}).")
-            exit(-1)
+            raise LLMStreamingError(f"LLM streaming failed: {e}") from e

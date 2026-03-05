@@ -5,6 +5,7 @@ to track global financial markets and generate trading recommendations.
 """
 
 import sys
+import random
 from pathlib import Path
 from typing import Any, Dict, List
 from datetime import datetime, timedelta
@@ -14,6 +15,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from evo.main import create_evo_system
 from evo.config import Config
+
+# Seed random with current time for different data each run
+random.seed(int(datetime.now().timestamp()))
 
 
 class FinancialMarketsSentinel:
@@ -119,9 +123,7 @@ class FinancialMarketsSentinel:
             Dictionary with instrument data.
         """
         # In real implementation, fetch from financial API
-        # For demo, generate realistic-looking data
-        import random
-        
+        # For demo, generate realistic-looking data with seeded random
         base_price = 100 + random.random() * 1000
         change_percent = (random.random() - 0.5) * 5  # -2.5% to +2.5%
         
@@ -311,11 +313,15 @@ class FinancialMarketsSentinel:
             
         Returns:
             Market commentary text.
+            
+        Raises:
+            RuntimeError: If LLM is not available or fails to generate commentary.
         """
-        if self.llm_client:
-            try:
-                summary = signals['summary']
-                prompt = f"""Write a brief market commentary (100-150 words) based on these trading signals:
+        if not self.llm_client:
+            raise RuntimeError("LLM client not available. Configure LLM_API_KEY to use LLM-generated commentary.")
+        
+        summary = signals['summary']
+        prompt = f"""Write a brief market commentary (100-150 words) based on these trading signals:
 
 Buy signals: {summary.get('BUY', 0)}
 Sell signals: {summary.get('SELL', 0)}
@@ -329,17 +335,14 @@ Focus on:
 - Risk factors
 - Outlook"""
 
-                commentary = self.llm_client.respond(
-                    model=self.model,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                return commentary
-            except Exception:
-                pass
-        
-        # Fallback commentary
-        sentiment = self._calculate_sentiment(signals['summary'])
-        return f"Markets are showing {sentiment.lower()} sentiment. Monitor key support and resistance levels."
+        try:
+            commentary = self.llm_client.respond(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return commentary
+        except Exception as e:
+            raise RuntimeError(f"Failed to generate market commentary: {e}") from e
 
     def export_report(self, report: Dict[str, Any]) -> str:
         """Export daily report to markdown file.

@@ -33,7 +33,9 @@ class ActionLayer:
             llm_provider: Optional LLM provider (iflow, openrouter, openai).
             llm_base_url: Optional custom base URL for LLM API.
         """
-        self.api_key = api_key or Config.LLM_API_KEY
+        # Use provided api_key if explicitly set, otherwise use config
+        # Use a sentinel to distinguish None from not provided
+        self.api_key = api_key if api_key is not None else Config.LLM_API_KEY
         self.memory = memory
         self.capability_registry = capability_registry
         self.llm_provider = llm_provider or Config.LLM_PROVIDER
@@ -41,12 +43,14 @@ class ActionLayer:
         
         # Initialize LLM client based on provider
         self.llm_client = None
-        if self.api_key and LLM_CLIENTS_AVAILABLE:
+        # Only initialize LLM client if api_key is not None (explicitly set)
+        # This allows tests to pass api_key=None to disable LLM
+        if api_key is not None and LLM_CLIENTS_AVAILABLE:
             if self.llm_provider == "iflow":
-                base_url = self.llm_base_url or "https://apis.iflow.cn/v1"
+                base_url = self.llm_base_url or Config.LLM_IFLOW_BASE_URL
                 self.llm_client = LLMClientIFlow(api_key=self.api_key, base_url=base_url)
             elif self.llm_provider == "openrouter":
-                base_url = self.llm_base_url or "https://openrouter.ai/api/v1"
+                base_url = self.llm_base_url or Config.LLM_OPENROUTER_BASE_URL
                 self.llm_client = LLMClientOpenRouter(api_key=self.api_key, base_url=base_url)
     
     # Tool registration (delegates to capability_registry if available)
@@ -73,7 +77,7 @@ class ActionLayer:
         """Create an execution plan for a goal.
         
         Uses OpenAI API for LLM-based planning if API key is provided,
-        otherwise falls back to simple planning.
+        otherwise uses simple planning.
         
         Args:
             goal: Dictionary containing goal description and optional context.
@@ -81,6 +85,9 @@ class ActionLayer:
             
         Returns:
             Dictionary with execution steps and goal.
+            
+        Raises:
+            LLMResponseError: If LLM-based planning fails and no simple plan available.
         """
         # Try LLM-based planning if LLM client is available
         if self.llm_client:
@@ -88,11 +95,11 @@ class ActionLayer:
                 llm_plan = self._llm_plan_action(goal, stream=stream)
                 if llm_plan and "steps" in llm_plan:
                     return llm_plan
-            except Exception:
-                # Fall back to simple planning on error
-                pass
+            except Exception as e:
+                from evo import LLMResponseError
+                raise LLMResponseError(f"LLM action planning failed: {e}") from e
         
-        # Simple fallback planning
+        # Simple planning
         return self._simple_plan_action(goal)
     
     def _llm_plan_action(self, goal: Dict[str, Any], stream: bool = False) -> Dict[str, Any]:
@@ -193,7 +200,11 @@ Only use tools from the available list. Be specific and concise."""
             max_retries: Maximum number of retry attempts.
             
         Returns:
-            Result from tool execution or error dictionary.
+            Result from tool execution.
+            
+        Raises:
+            ToolNotFoundError: If the tool is not found in the registry.
+            RuntimeError: If the tool execution fails after all retry attempts.
         """
         # Get tool from capability_registry or internal storage
         tool = None
@@ -205,7 +216,8 @@ Only use tools from the available list. Be specific and concise."""
             tool = self._internal_tools[tool_name]
         
         if tool is None:
-            return {"error": f"Tool '{tool_name}' not found"}
+            from evo import ToolNotFoundError
+            raise ToolNotFoundError(f"Tool '{tool_name}' not found")
         
         params = params or {}
         max_retries = max_retries or Config.ACTION_MAX_RETRIES
@@ -217,7 +229,5 @@ Only use tools from the available list. Be specific and concise."""
                 return tool()
             except Exception as e:
                 if attempt == max_retries - 1:
-                    return {"error": f"Tool '{tool_name}' failed after {max_retries} attempts"}
+                    raise RuntimeError(f"Tool '{tool_name}' failed after {max_retries} attempts: {e}") from e
                 time.sleep(Config.ACTION_RETRY_DELAY)  # Use config value
-        
-        return {"error": "Unknown error"}

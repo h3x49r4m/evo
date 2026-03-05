@@ -9,7 +9,7 @@ logger = get_logger("evo.capability")
 
 
 class CapabilityRegistry:
-    """Dynamic tracking of tools, skills, and knowledge."""
+    """Dynamic tracking of tools, skills, and knowledge with skill level tracking."""
     
     def __init__(self) -> None:
         self._tools: Dict[str, Dict[str, Any]] = {}
@@ -17,6 +17,8 @@ class CapabilityRegistry:
         self._knowledge: Dict[str, Any] = {}
         # Search index: maps lowercase tokens to tool names for fast lookup
         self._tool_search_index: Dict[str, List[str]] = {}
+        # Track skill levels for tools as well
+        self._tool_skill_levels: Dict[str, float] = {}
     
     # Tool methods
     def _build_tool_search_index(self, name: str, description: str) -> None:
@@ -50,6 +52,8 @@ class CapabilityRegistry:
             "description": description,
             "callable": callable_func
         }
+        # Initialize skill level to default
+        self._tool_skill_levels[name] = Config.CAPABILITY_DEFAULT_LEVEL
         # Build search index from name and description
         self._build_tool_search_index(name, description)
         logger.debug(f"Registered tool: {name}")
@@ -65,6 +69,7 @@ class CapabilityRegistry:
     def unregister_tool(self, name: str) -> None:
         """Remove a tool from the registry."""
         self._tools.pop(name, None)
+        self._tool_skill_levels.pop(name, None)
         # Remove from search index
         for token_list in self._tool_search_index.values():
             if name in token_list:
@@ -94,6 +99,123 @@ class CapabilityRegistry:
         
         return sorted(results)
     
+    # Skill level tracking
+    def update_skill_level(self, name: str, level: float, success: bool = None) -> None:
+        """Update the skill level for a tool or skill.
+        
+        Args:
+            name: Name of the tool or skill.
+            level: New skill level (0.0 to 1.0).
+            success: Optional success indicator. If True, level increases; if False, level decreases.
+        """
+        # Clamp level to valid range
+        clamped_level = max(0.0, min(1.0, level))
+        
+        # Update tool skill level
+        if name in self._tool_skill_levels:
+            if success is True:
+                self._tool_skill_levels[name] = min(1.0, clamped_level + Config.SKILL_LEVEL_INCREMENT)
+            elif success is False:
+                self._tool_skill_levels[name] = max(0.0, clamped_level - Config.SKILL_LEVEL_DECREMENT)
+            else:
+                self._tool_skill_levels[name] = clamped_level
+        
+        # Update skill level
+        if name in self._skills:
+            if success is True:
+                self._skills[name]["level"] = min(1.0, clamped_level + Config.SKILL_LEVEL_INCREMENT)
+            elif success is False:
+                self._skills[name]["level"] = max(0.0, clamped_level - Config.SKILL_LEVEL_DECREMENT)
+            else:
+                self._skills[name]["level"] = clamped_level
+        
+        logger.debug(f"Updated skill level: {name} -> {clamped_level}")
+    
+    def get_skill_level(self, name: str) -> Optional[float]:
+        """Get the skill level for a tool or skill."""
+        # Check tools first
+        if name in self._tool_skill_levels:
+            return self._tool_skill_levels[name]
+        
+        # Check skills
+        if name in self._skills:
+            return self._skills[name].get("level", Config.CAPABILITY_DEFAULT_LEVEL)
+        
+        # Return default for unknown
+        return Config.CAPABILITY_DEFAULT_LEVEL
+    
+    def get_top_skills(self, limit: int = None) -> List[Dict[str, Any]]:
+        """Get top skills ranked by level.
+        
+        Args:
+            limit: Maximum number of skills to return.
+            
+        Returns:
+            List of skill dictionaries sorted by level (highest first).
+        """
+        all_skills = []
+        
+        # Add tools with skill levels
+        for name, level in self._tool_skill_levels.items():
+            all_skills.append({"name": name, "level": level, "type": "tool"})
+        
+        # Add skills
+        for name, skill_data in self._skills.items():
+            all_skills.append({"name": name, "level": skill_data["level"], "type": "skill"})
+        
+        # Sort by level descending
+        all_skills.sort(key=lambda x: x["level"], reverse=True)
+        
+        return all_skills[:limit or Config.TOP_SKILLS_DEFAULT_LIMIT]
+    
+    def get_average_skill_level(self) -> float:
+        """Get the average skill level across all capabilities."""
+        total_level = 0.0
+        count = 0
+        
+        # Sum tool skill levels
+        for level in self._tool_skill_levels.values():
+            total_level += level
+            count += 1
+        
+        # Sum skill levels
+        for skill_data in self._skills.values():
+            total_level += skill_data["level"]
+            count += 1
+        
+        if count == 0:
+            return Config.CAPABILITY_DEFAULT_LEVEL
+        
+        return total_level / count
+    
+    def get_learning_progress(self) -> float:
+        """Get overall learning progress based on skill levels."""
+        avg_level = self.get_average_skill_level()
+        return avg_level  # Progress is simply the average skill level
+    
+    def get_capability_mastery(self, threshold: float = None) -> List[str]:
+        """Get list of mastered capabilities (skill level >= threshold).
+        
+        Args:
+            threshold: Minimum skill level to consider mastered.
+            
+        Returns:
+            List of capability names that are mastered.
+        """
+        mastered = []
+        
+        # Check tools
+        for name, level in self._tool_skill_levels.items():
+            if level >= (threshold or Config.MASTERY_THRESHOLD):
+                mastered.append(name)
+        
+        # Check skills
+        for name, skill_data in self._skills.items():
+            if skill_data["level"] >= (threshold or Config.MASTERY_THRESHOLD):
+                mastered.append(name)
+        
+        return mastered
+    
     # Skill methods
     def register_skill(self, name: str, description: str, level: Optional[float] = None) -> None:
         """Register a skill in the capability registry."""
@@ -122,15 +244,6 @@ class CapabilityRegistry:
         """Remove a skill from the registry."""
         self._skills.pop(name, None)
         logger.debug(f"Unregistered skill: {name}")
-    
-    def update_skill_level(self, name: str, level: float) -> None:
-        """Update the proficiency level of a skill."""
-        if not validate_skill_level(level):
-            raise ValueError(f"Invalid skill level: {level}")
-        
-        if name in self._skills:
-            self._skills[name]["level"] = level
-            logger.debug(f"Updated skill level: {name} -> {level}")
     
     # Knowledge methods
     def register_knowledge(self, key: str, value: KnowledgeValue) -> None:

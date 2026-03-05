@@ -87,7 +87,9 @@ def _load_llm_providers_config() -> Dict[str, Any]:
     try:
         with open(config_path, 'r') as f:
             return json.load(f)
-    except (json.JSONDecodeError, IOError):
+    except (json.JSONDecodeError, IOError) as e:
+        import warnings
+        warnings.warn(f"Failed to load LLM config from {config_path}: {e}")
         return {}
 
 
@@ -140,6 +142,17 @@ class Config:
     LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "3"))
     LLM_RETRY_DELAY: float = float(os.getenv("LLM_RETRY_DELAY", "1.0"))
     
+    # LLM HTTP Connection Configuration
+    LLM_HTTP_TIMEOUT: float = float(os.getenv("LLM_HTTP_TIMEOUT", "60.0"))
+    LLM_CONNECT_TIMEOUT: float = float(os.getenv("LLM_CONNECT_TIMEOUT", "10.0"))
+    LLM_MAX_KEEPALIVE_CONNECTIONS: int = int(os.getenv("LLM_MAX_KEEPALIVE_CONNECTIONS", "5"))
+    LLM_MAX_CONNECTIONS: int = int(os.getenv("LLM_MAX_CONNECTIONS", "10"))
+    LLM_OPENAI_MAX_RETRIES: int = int(os.getenv("LLM_OPENAI_MAX_RETRIES", "2"))
+    
+    # LLM Provider Default URLs
+    LLM_IFLOW_BASE_URL: str = "https://apis.iflow.cn/v1"
+    LLM_OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    
     # Legacy OpenAI API (deprecated, use LLM_* instead)
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
@@ -150,6 +163,29 @@ class Config:
     # Logging
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FORMAT: str = os.getenv("LOG_FORMAT", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    
+    # Learning and Feedback Thresholds
+    PATTERN_DETECTION_THRESHOLD: int = int(os.getenv("PATTERN_DETECTION_THRESHOLD", "2"))
+    BEST_ACTION_SUCCESS_THRESHOLD: float = float(os.getenv("BEST_ACTION_SUCCESS_THRESHOLD", "0.7"))
+    FAILING_ACTION_SUCCESS_THRESHOLD: float = float(os.getenv("FAILING_ACTION_SUCCESS_THRESHOLD", "0.3"))
+    CONFIDENCE_DIVISOR: float = float(os.getenv("CONFIDENCE_DIVISOR", "10.0"))
+    LEARNING_SCORE_DIVISOR: float = float(os.getenv("LEARNING_SCORE_DIVISOR", "20.0"))
+    
+    # Capability and Skill Configuration
+    SKILL_LEVEL_INCREMENT: float = float(os.getenv("SKILL_LEVEL_INCREMENT", "0.1"))
+    SKILL_LEVEL_DECREMENT: float = float(os.getenv("SKILL_LEVEL_DECREMENT", "0.1"))
+    TOP_SKILLS_DEFAULT_LIMIT: int = int(os.getenv("TOP_SKILLS_DEFAULT_LIMIT", "5"))
+    MASTERY_THRESHOLD: float = float(os.getenv("MASTERY_THRESHOLD", "0.9"))
+    
+    # Memory and Exploration Configuration
+    SIMILAR_EXPERIENCES_DEFAULT_K: int = int(os.getenv("SIMILAR_EXPERIENCES_DEFAULT_K", "5"))
+    EXPLORATION_PLAN_STEP_LIMIT: int = int(os.getenv("EXPLORATION_PLAN_STEP_LIMIT", "3"))
+    EXPLORATION_ACTION_LIMIT: int = int(os.getenv("EXPLORATION_ACTION_LIMIT", "2"))
+    
+    # Metacognition and Goal Configuration
+    METACOGNITION_PATTERN_THRESHOLD: int = int(os.getenv("METACOGNITION_PATTERN_THRESHOLD", "2"))
+    CAPABILITY_UPDATE_MULTIPLIER: float = float(os.getenv("CAPABILITY_UPDATE_MULTIPLIER", "0.1"))
+    DRIVE_PRIORITY_DIVISOR: float = float(os.getenv("DRIVE_PRIORITY_DIVISOR", "10.0"))
     
     @classmethod
     def get_all(cls) -> dict:

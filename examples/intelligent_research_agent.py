@@ -157,15 +157,7 @@ Be thorough and specific. Provide at least 3-4 substantial paragraphs."""
                     'data': f"Detailed research data for phase {phase}"
                 }
             except Exception as e:
-                print(f"  LLM error: {e}")
-        
-        # Fallback to simple planning
-        return {
-            'phase': phase,
-            'description': phase_descriptions[phase],
-            'content': f"Standard research content for phase {phase}: {phase_descriptions[phase]}",
-            'data': f"Research data for phase {phase}"
-        }
+                raise RuntimeError(f"Failed to execute research phase {phase}: {e}") from e
 
     def generate_paper(self, research_result: Dict[str, Any]) -> Dict[str, Any]:
         """Generate a research paper from research findings.
